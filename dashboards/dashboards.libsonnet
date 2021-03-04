@@ -95,35 +95,22 @@ local statPanel = grafana.statPanel;
       .addPanel(individualProbesRow, gridPos={ h: 1, w: 24, x: 0, y: 5 })
       .addPanel(
         statPanel.new(
-          'Status',
+          'Uptime %',
           datasource='$datasource',
-          reducerFunction='last',
+          reducerFunction='mean',
+          unit='percentunit',
           colorMode='background'
         )
-        .addTarget(prometheus.target('sum(probe_success{instance=~"$instance"})', intervalFactor=1, instant=true))
+        .addTarget(prometheus.target('probe_success{instance=~"$instance"}', intervalFactor=1))
         .addThresholds([
           { color: 'red', value: 0 },
-          { color: 'green', value: 0.99 },
-        ])
-        .addMapping(
-          {
-            value: '0',
-            text: 'DOWN',
-            type: 1,
-          }
-        )
-        .addMapping(
-          {
-            text: 'UP',
-            type: 1,
-            value: '1',
-          }
-        ),
+          { color: 'green', value: 0.999 },
+        ]),
         gridPos={ h: 3, w: 3, x: 0, y: 5 }
       )
       .addPanel(
         statPanel.new(
-          'Response Code',
+          'Latest Response Code',
           datasource='$datasource',
           reducerFunction='last',
         )
@@ -258,6 +245,7 @@ local statPanel = grafana.statPanel;
       .addPanel(
         graphPanel.new(
           'HTTP duration',
+          datasource='$datasource',
           legend_show=true,
           legend_values=true,
           legend_alignAsTable=true,
@@ -276,6 +264,8 @@ local statPanel = grafana.statPanel;
       .addPanel(
         graphPanel.new(
           'HTTP phase percentage',
+          datasource='$datasource',
+          max=100,
           legend_show=true,
           legend_values=true,
           legend_alignAsTable=true,
