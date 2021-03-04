@@ -68,7 +68,11 @@ local statPanel = grafana.statPanel;
           unit='percentunit',
         )
         .addTarget(prometheus.target('count(probe_success == 1) / count(probe_http_version)', intervalFactor=1))
-        .addThreshold({ color: 'green', value: 0.999 }),
+        .addThresholds([
+          { color: 'red', value: 0 },
+          { color: 'orange', value: 0.99 },
+          { color: 'green', value: 0.999 },
+        ]),
         gridPos={ h: 4, w: 6, x: 6, y: 1 }
       )
       .addPanel(
@@ -104,6 +108,7 @@ local statPanel = grafana.statPanel;
         .addTarget(prometheus.target('probe_success{instance=~"$instance"}', intervalFactor=1))
         .addThresholds([
           { color: 'red', value: 0 },
+          { color: 'orange', value: 0.99 },
           { color: 'green', value: 0.999 },
         ]),
         gridPos={ h: 3, w: 3, x: 0, y: 5 }
