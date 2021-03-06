@@ -2,7 +2,7 @@
 
 A set of Grafana dashboards and Prometheus alerts for Blackbox-exporter.
 
-_This is a work in progress.
+_This is a work in progress._
 
 ## Preview
 
