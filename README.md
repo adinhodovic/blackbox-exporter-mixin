@@ -2,6 +2,14 @@
 
 A set of Grafana dashboards and Prometheus alerts for Blackbox-exporter.
 
+_This is a work in progress.
+
+## Preview
+
+### Grafana dashboard
+
+![image](https://user-images.githubusercontent.com/12065867/110215613-0c8ce600-7eab-11eb-9fd3-dc5b62807176.png)
+
 ## How to use
 
 This mixin is designed to be vendored into the repo with your infrastructure config.
