@@ -22,7 +22,7 @@ local statPanel = grafana.statPanel;
         name='instance',
         label='Instance',
         datasource='$datasource',
-        query='label_values(probe_success, instance)',
+        query='label_values(probe_success{%(blackboxExporterSelector)s}, instance)' % $._config,
         current='',
         hide='',
         refresh=1,
@@ -58,7 +58,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           reducerFunction='last',
         )
-        .addTarget(prometheus.target('count(probe_http_version)', intervalFactor=1)),
+        .addTarget(prometheus.target('count(probe_http_version{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1)),
         gridPos={ h: 4, w: 6, x: 0, y: 1 }
       )
       .addPanel(
@@ -67,7 +67,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           unit='percentunit',
         )
-        .addTarget(prometheus.target('count(probe_success == 1) / count(probe_http_version)', intervalFactor=1))
+        .addTarget(prometheus.target('count(probe_success{%(blackboxExporterSelector)s} == 1) / count(probe_http_version{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1))
         .addThresholds([
           { color: 'red', value: 0 },
           { color: 'orange', value: 0.99 },
@@ -82,7 +82,7 @@ local statPanel = grafana.statPanel;
           reducerFunction='last',
           unit='percentunit',
         )
-        .addTarget(prometheus.target('count(probe_http_ssl == 1) / count(probe_http_version)', intervalFactor=1))
+        .addTarget(prometheus.target('count(probe_http_ssl{%(blackboxExporterSelector)s} == 1) / count(probe_http_version{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1))
         .addThreshold({ color: 'green', value: 0.999 }),
         gridPos={ h: 4, w: 6, x: 12, y: 1 }
       )
@@ -93,7 +93,7 @@ local statPanel = grafana.statPanel;
           reducerFunction='last',
           unit='s',
         )
-        .addTarget(prometheus.target('avg(probe_duration_seconds)', intervalFactor=1)),
+        .addTarget(prometheus.target('avg(probe_duration_seconds{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1)),
         gridPos={ h: 4, w: 6, x: 18, y: 1 }
       )
       .addPanel(individualProbesRow, gridPos={ h: 1, w: 24, x: 0, y: 5 })
@@ -105,7 +105,7 @@ local statPanel = grafana.statPanel;
           unit='percentunit',
           colorMode='background'
         )
-        .addTarget(prometheus.target('probe_success{instance=~"$instance"}', intervalFactor=1))
+        .addTarget(prometheus.target('probe_success{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1))
         .addThresholds([
           { color: 'red', value: 0 },
           { color: 'orange', value: 0.99 },
@@ -119,7 +119,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           reducerFunction='last',
         )
-        .addTarget(prometheus.target('probe_http_status_code{instance=~"$instance"}', intervalFactor=1, instant=true))
+        .addTarget(prometheus.target('probe_http_status_code{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
         .addThresholds([
           { color: 'green', value: 0 },
           { color: 'red', value: 400 },
@@ -132,7 +132,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           reducerFunction='last',
         )
-        .addTarget(prometheus.target('probe_http_ssl{instance=~"$instance"}', intervalFactor=1, instant=true))
+        .addTarget(prometheus.target('probe_http_ssl{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
         .addThresholds([
           { color: 'red', value: 0 },
           { color: 'green', value: 1 },
@@ -161,7 +161,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(
           prometheus.target(
-            'probe_tls_version_info{instance=~"$instance"}',
+            'probe_tls_version_info{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config,
             intervalFactor=1,
             instant=true,
             legendFormat='{{version}}',
@@ -175,7 +175,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           reducerFunction='last',
         )
-        .addTarget(prometheus.target('probe_http_redirects{instance=~"$instance"}', intervalFactor=1, instant=true))
+        .addTarget(prometheus.target('probe_http_redirects{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
         .addMapping(
           {
             value: '0',
@@ -200,7 +200,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(
           prometheus.target(
-            'probe_http_version{instance=~"$instance"}',
+            'probe_http_version{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config,
             intervalFactor=1,
             instant=true,
           )
@@ -218,7 +218,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(
           prometheus.target(
-            'probe_ssl_earliest_cert_expiry{instance=~"$instance"} - time()',
+            'probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s, instance=~"$instance"} - time()' % $._config,
             intervalFactor=1,
             instant=true,
           )
@@ -235,7 +235,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           unit='s',
         )
-        .addTarget(prometheus.target('probe_duration_seconds{instance=~"$instance"}', intervalFactor=1)),
+        .addTarget(prometheus.target('probe_duration_seconds{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1)),
         gridPos={ h: 4, w: 3, x: 0, y: 17 }
       )
       .addPanel(
@@ -244,7 +244,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           unit='s',
         )
-        .addTarget(prometheus.target('probe_dns_lookup_time_seconds{instance=~"$instance"}', intervalFactor=1)),
+        .addTarget(prometheus.target('probe_dns_lookup_time_seconds{%(blackboxExporterSelector)s, instance=~"$instance"}' % $._config, intervalFactor=1)),
         gridPos={ h: 4, w: 3, x: 3, y: 17 }
       )
       .addPanel(
@@ -260,7 +260,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(
           prometheus.target(
-            'sum(probe_http_duration_seconds{instance=~"$instance"}) by (instance)',
+            'sum(probe_http_duration_seconds{%(blackboxExporterSelector)s, instance=~"$instance"}) by (instance)' % $._config,
             legendFormat='{{instance}}',
           )
         ),
@@ -284,7 +284,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(
           prometheus.target(
-            'sum(probe_http_duration_seconds{instance=~"$instance"}) by (phase)',
+            'sum(probe_http_duration_seconds{%(blackboxExporterSelector)s, instance=~"$instance"}) by (phase)' % $._config,
             legendFormat='{{phase}}',
           )
         ),
