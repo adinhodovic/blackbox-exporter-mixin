@@ -24,7 +24,7 @@
               avg_over_time(probe_success{%(blackboxExporterSelector)s}[30d]) * 100 < %(uptimeThreshhold30d)s
             ||| % $._config,
             labels: {
-              severity: 'Warning',
+              severity: 'Info',
             },
             annotations: {
               summary: 'Probe uptime is lower than %(uptimeThreshhold30d)g%% for the last 30 days.' % $._config,
