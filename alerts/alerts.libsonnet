@@ -19,16 +19,16 @@
             'for': '1m',
           },
           {
-            alert: 'BlackboxLowUptime30d',
+            alert: 'BlackboxLowUptime%(uptimePeriodDays)sd' % $._config,
             expr: |||
-              avg_over_time(probe_success{%(blackboxExporterSelector)s}[30d]) * 100 < %(uptimeThreshhold30d)s
+              avg_over_time(probe_success{%(blackboxExporterSelector)s}[%(uptimePeriodDays)sd]) * 100 < %(uptimeThreshold)s
             ||| % $._config,
             labels: {
               severity: 'Info',
             },
             annotations: {
-              summary: 'Probe uptime is lower than %(uptimeThreshhold30d)g%% for the last 30 days.' % $._config,
-              description: 'The probe has a lower uptime than %(uptimeThreshhold30d)g%% the last 30 days for the instance {{ $labels.instance }}.' % $._config,
+              summary: 'Probe uptime is lower than %(uptimeThreshold)g%% for the last %(uptimePeriodDays)s days.' % $._config,
+              description: 'The probe has a lower uptime than %(uptimeThreshold)g%% the last %(uptimePeriodDays)s days for the instance {{ $labels.instance }}.' % $._config,
             },
           },
           {

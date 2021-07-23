@@ -3,7 +3,10 @@
     // Selectors are inserted between {} in Prometheus queries.
     blackboxExporterSelector: 'job="blackbox-exporter"',
 
-    // Will alert if below the percentage below last 30d
-    uptimeThreshhold30d: 99.9,
+    // The period in days to consider for the uptime evaluation 
+    uptimePeriodDays: 30,
+
+    // Will alert if below the percentage for the configured uptime period
+    uptimeThreshold: 99.9,
   },
 }
