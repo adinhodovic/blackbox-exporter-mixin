@@ -2,7 +2,7 @@
   prometheusAlerts+:: {
     groups+: [
       {
-        name: 'blackbox-exporter',
+        name: 'blackbox-exporter.rules',
         rules: [
           {
             alert: 'BlackboxProbeFailed',
