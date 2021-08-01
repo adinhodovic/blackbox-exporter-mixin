@@ -26,7 +26,7 @@ local statPanel = grafana.statPanel;
         current='',
         hide='',
         refresh=1,
-        multi=true,
+        multi=false,
         includeAll=false,
         sort=1
       ),
@@ -67,7 +67,7 @@ local statPanel = grafana.statPanel;
           datasource='$datasource',
           unit='percentunit',
         )
-        .addTarget(prometheus.target('count(probe_success{%(blackboxExporterSelector)s} == 1) / count(probe_http_version{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1))
+        .addTarget(prometheus.target('(count(probe_success{%(blackboxExporterSelector)s} == 1) OR vector(0)) / count(probe_http_version{%(blackboxExporterSelector)s})' % $._config, intervalFactor=1))
         .addThresholds([
           { color: 'red', value: 0 },
           { color: 'orange', value: 0.99 },
