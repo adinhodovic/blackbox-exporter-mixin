@@ -10,7 +10,7 @@
               probe_success{%(blackboxExporterSelector)s} == 0
             ||| % $._config,
             labels: {
-              severity: 'Critical',
+              severity: 'critical',
             },
             annotations: {
               summary: 'Probe has failed for the past minute.',
@@ -24,7 +24,7 @@
               avg_over_time(probe_success{%(blackboxExporterSelector)s}[%(uptimePeriodDays)sd]) * 100 < %(uptimeThreshold)s
             ||| % $._config,
             labels: {
-              severity: 'Info',
+              severity: 'info',
             },
             annotations: {
               summary: 'Probe uptime is lower than %(uptimeThreshold)g%% for the last %(uptimePeriodDays)s days.' % $._config,
@@ -38,7 +38,7 @@
               probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < 21 * 24 * 3600
             ||| % $._config,
             labels: {
-              severity: 'Warning',
+              severity: 'warning',
             },
             annotations: {
               summary: 'SSL certificate will expire soon.',
