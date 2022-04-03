@@ -15,7 +15,7 @@
             annotations: {
               summary: 'Probe has failed for the past minute.',
               description: 'The probe failed for the instance {{ $labels.instance }}.',
-              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/nginx-ingress-controller?orgId=1&refresh=5s' % $._config,
+              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?orgId=1&refresh=5s' % $._config,
             },
             'for': '1m',
           },
@@ -30,7 +30,7 @@
             annotations: {
               summary: 'Probe uptime is lower than %(uptimeThreshold)g%% for the last %(uptimePeriodDays)s days.' % $._config,
               description: 'The probe has a lower uptime than %(uptimeThreshold)g%% the last %(uptimePeriodDays)s days for the instance {{ $labels.instance }}.' % $._config,
-              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/nginx-ingress-controller?orgId=1&refresh=5s' % $._config,
+              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?orgId=1&refresh=5s' % $._config,
             },
           },
           {
@@ -45,7 +45,7 @@
             annotations: {
               summary: 'SSL certificate will expire soon.',
               description: 'The SSL certificate of the instance {{ $labels.instance }} is expiring within 3 weeks.',
-              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/nginx-ingress-controller?orgId=1&refresh=5s' % $._config,
+              dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?orgId=1&refresh=5s' % $._config,
             },
           },
         ],
