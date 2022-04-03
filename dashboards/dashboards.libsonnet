@@ -46,7 +46,8 @@ local statPanel = grafana.statPanel;
       dashboard.new(
         'Blackbox Exporter',
         description='A dashboard that monitors the Blackbox-exporter. It is created using the blackbox-exporter-mixin for the the (blackbox-exporter)[https://github.com/prometheus/blackbox-exporter]',
-        uid='blackbox-exporter',
+        uid=$._config.dashboardUid,
+        tags=$._config.tags,
         time_from='now-2d',
         time_to='now',
         timezone='utc'
