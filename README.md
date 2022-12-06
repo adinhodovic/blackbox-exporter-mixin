@@ -42,8 +42,7 @@ jb install
 Finally, build the mixin:
 
 ```sh
-make prometheus-alerts.yaml
-make prometheus-rules.yaml
+make prometheus_alerts.yaml
 make dashboards_out
 ```
 
