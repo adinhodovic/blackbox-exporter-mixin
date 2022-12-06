@@ -34,7 +34,7 @@ brew install jsonnet
 Then, grab the mixin and its dependencies:
 
 ```sh
-git clone https://github.com/example/blackbox-exporter-mixin
+git clone https://github.com/adinhodovic/blackbox-exporter-mixin
 cd example/blackbox-exporter-mixin
 jb install
 ```
