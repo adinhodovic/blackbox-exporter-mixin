@@ -124,7 +124,34 @@ local statPanel = grafana.statPanel;
           { color: 'orange', value: 0.99 },
           { color: 'green', value: 0.999 },
         ]),
-        gridPos={ h: 3, w: 3, x: 0, y: 5 }
+        gridPos={ h: 3, w: 6, x: 0, y: 5 }
+      )
+      .addPanel(
+        statPanel.new(
+          'Probe Success',
+          datasource='$datasource',
+          reducerFunction='last',
+        )
+        .addTarget(prometheus.target('probe_success{job=~"$job", instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
+        .addThresholds([
+          { color: 'red', value: 0 },
+          { color: 'green', value: 1 },
+        ])
+        .addMapping(
+          {
+            value: '0',
+            text: 'No',
+            type: 1,
+          }
+        )
+        .addMapping(
+          {
+            value: '1',
+            text: 'Yes',
+            type: 1,
+          }
+        ),
+        gridPos={ h: 3, w: 3, x: 0, y: 8 }
       )
       .addPanel(
         statPanel.new(
@@ -133,39 +160,12 @@ local statPanel = grafana.statPanel;
           reducerFunction='last',
         )
         .addTarget(prometheus.target('probe_http_status_code{job=~"$job", instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
-        .addTarget(prometheus.target('probe_success{job=~"$job", instance=~"$instance"}' % $._config, intervalFactor=1, instant=true))
         .addThresholds([
           { color: 'green', value: 0 },
-          { color: 'red', value: 400 },
-        ])
-        // add 1(success)/0(failed) mapping in case of icmp probes:
-        +
-        {
-          fieldConfig+: {
-            defaults+: {
-              mappings: [
-                {
-                  type: 'value',
-                  options: {
-                    '0': {
-                      text: 'Failed',
-                      color: 'red',
-                      index: 1,
-                    },
-                    '1': {
-                      text: 'Success',
-                      color: 'green',
-                      index: 0,
-                    },
-                  },
-                },
-              ],
-            },
-          },
-        }
-
-        ,
-        gridPos={ h: 3, w: 3, x: 3, y: 5 }
+          { color: 'yellow', value: 400 },
+          { color: 'red', value: 500 },
+        ]),
+        gridPos={ h: 3, w: 3, x: 3, y: 8 }
       )
       .addPanel(
         statPanel.new(
@@ -192,7 +192,7 @@ local statPanel = grafana.statPanel;
             type: 1,
           }
         ),
-        gridPos={ h: 3, w: 3, x: 0, y: 8 }
+        gridPos={ h: 3, w: 3, x: 0, y: 11 }
       )
       .addPanel(
         statPanel.new(
@@ -208,7 +208,7 @@ local statPanel = grafana.statPanel;
             legendFormat='{{version}}',
           )
         ) + { options+: { textMode: 'name' } },
-        gridPos={ h: 3, w: 3, x: 3, y: 8 }
+        gridPos={ h: 3, w: 3, x: 3, y: 11 }
       )
       .addPanel(
         statPanel.new(
@@ -231,7 +231,7 @@ local statPanel = grafana.statPanel;
             type: 1,
           }
         ),
-        gridPos={ h: 3, w: 3, x: 0, y: 11 }
+        gridPos={ h: 3, w: 3, x: 0, y: 14 }
       )
       .addPanel(
         statPanel.new(
@@ -246,7 +246,7 @@ local statPanel = grafana.statPanel;
             instant=true,
           )
         ),
-        gridPos={ h: 3, w: 3, x: 3, y: 11 }
+        gridPos={ h: 3, w: 3, x: 3, y: 14 }
       )
       .addPanel(
         statPanel.new(
@@ -268,7 +268,7 @@ local statPanel = grafana.statPanel;
           { color: 'red', value: 0 },
           { color: 'green', value: 1814400 },
         ]),
-        gridPos={ h: 3, w: 6, x: 0, y: 14 }
+        gridPos={ h: 3, w: 6, x: 0, y: 17 }
       )
       .addPanel(
         statPanel.new(
@@ -277,7 +277,7 @@ local statPanel = grafana.statPanel;
           unit='s',
         )
         .addTarget(prometheus.target('probe_duration_seconds{job=~"$job", instance=~"$instance"}' % $._config, intervalFactor=1)),
-        gridPos={ h: 4, w: 3, x: 0, y: 17 }
+        gridPos={ h: 4, w: 3, x: 0, y: 20 }
       )
       .addPanel(
         statPanel.new(
@@ -286,7 +286,7 @@ local statPanel = grafana.statPanel;
           unit='s',
         )
         .addTarget(prometheus.target('probe_dns_lookup_time_seconds{job=~"$job", instance=~"$instance"}' % $._config, intervalFactor=1)),
-        gridPos={ h: 4, w: 3, x: 3, y: 17 }
+        gridPos={ h: 4, w: 3, x: 3, y: 20 }
       )
       .addPanel(
         graphPanel.new(
@@ -311,7 +311,7 @@ local statPanel = grafana.statPanel;
             legendFormat='Total probe duration',
           )
         ),
-        gridPos={ h: 8, w: 18, x: 6, y: 5 },
+        gridPos={ h: 10, w: 18, x: 6, y: 5 },
       )
       .addPanel(
         graphPanel.new(
@@ -341,7 +341,7 @@ local statPanel = grafana.statPanel;
             legendFormat='{{phase}}',
           )
         ),
-        gridPos={ h: 8, w: 18, x: 6, y: 13 },
+        gridPos={ h: 9, w: 18, x: 6, y: 15 },
       )
       + { templating+: { list+: [prometheusTemplate, jobTemplate, targetTemplate] } },
   },
