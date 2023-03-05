@@ -14,6 +14,7 @@ local statPanel = grafana.statPanel;
         'datasource',
         'prometheus',
         'Prometheus',
+        label='Data Source',
         hide='',
       ),
     local jobTemplate =
