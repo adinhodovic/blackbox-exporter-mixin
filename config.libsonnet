@@ -11,5 +11,7 @@
     uptimePeriodDays: 30,
     // Will alert if below the percentage for the configured uptime period
     uptimeThreshold: 99.9,
+    // The period in minutes to consider for the probe to fail
+    probeFailedInterval: '1m',
   },
 }

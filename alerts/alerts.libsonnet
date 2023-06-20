@@ -17,7 +17,7 @@
               description: 'The probe failed for the instance {{ $labels.instance }}.',
               dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?instance={{ $labels.instance }}' % $._config,
             },
-            'for': '1m',
+            'for': $._config.probeFailedInterval,
           },
           {
             alert: 'BlackboxLowUptime%(uptimePeriodDays)sd' % $._config,
