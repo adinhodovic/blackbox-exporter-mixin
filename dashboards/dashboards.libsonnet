@@ -49,6 +49,73 @@ local statPanel = grafana.statPanel;
         title='Summary'
       ),
 
+    local statusMap =
+      {
+        datasource: {
+          type: 'prometheus',
+          uid: '${datasource}',
+        },
+        fieldConfig: {
+          defaults: {
+            mappings: [
+              {
+                options: {
+                  '0': {
+                    color: 'light-red',
+                    index: 1,
+                    text: 'Down',
+                  },
+                  '1': {
+                    color: 'light-green',
+                    index: 0,
+                    text: 'Up',
+                  },
+                },
+                type: 'value',
+              },
+            ],
+            links: [
+              {
+                title: '',
+                url: 'd/' + $._config.dashboardUid + 'blackbox-exporter?var-instance=${__field.labels.instance}﻿﻿﻿&var-job=${__field.labels.job}',
+              },
+            ],
+            unit: 'short',
+          },
+        },
+        maxDataPoints: 100,
+        options: {
+          reduceOptions: {
+            values: false,
+            calcs: [
+              'lastNotNull',
+            ],
+            fields: '',
+          },
+          orientation: 'auto',
+          textMode: 'value_and_name',
+          colorMode: 'background',
+          graphMode: 'area',
+          justifyMode: 'auto',
+        },
+        targets: [
+          {
+            datasource: {
+              type: 'prometheus',
+              uid: '${datasource}',
+            },
+            expr: 'probe_success{job=~"$job"}',
+            format: 'time_series',
+            instant: false,
+            legendFormat: '{{instance}}',
+            range: true,
+          },
+        ],
+        title: 'Status map',
+        type: 'stat',
+      },
+
+
     local individualProbesRow =
       row.new(
         title='$instance',
@@ -67,13 +134,17 @@ local statPanel = grafana.statPanel;
       )
       .addPanel(summaryRow, gridPos={ h: 1, w: 24, x: 0, y: 0 })
       .addPanel(
+        statusMap,
+        gridPos={ h: 5, w: 24, x: 0, y: 1 }
+      )
+      .addPanel(
         statPanel.new(
           'Probes',
           datasource='$datasource',
           reducerFunction='last',
         )
         .addTarget(prometheus.target('count(probe_success{job=~"$job"})' % $._config, intervalFactor=1)),
-        gridPos={ h: 4, w: 6, x: 0, y: 1 }
+        gridPos={ h: 4, w: 6, x: 0, y: 2 }
       )
       .addPanel(
         statPanel.new(
@@ -87,7 +158,7 @@ local statPanel = grafana.statPanel;
           { color: 'orange', value: 0.99 },
           { color: 'green', value: 0.999 },
         ]),
-        gridPos={ h: 4, w: 6, x: 6, y: 1 }
+        gridPos={ h: 4, w: 6, x: 6, y: 2 }
       )
       .addPanel(
         statPanel.new(
@@ -98,7 +169,7 @@ local statPanel = grafana.statPanel;
         )
         .addTarget(prometheus.target('count(probe_http_ssl{job=~"$job"} == 1) / count(probe_http_version{job=~"$job"})' % $._config, intervalFactor=1))
         .addThreshold({ color: 'green', value: 0.999 }),
-        gridPos={ h: 4, w: 6, x: 12, y: 1 }
+        gridPos={ h: 4, w: 6, x: 12, y: 2 }
       )
       .addPanel(
         statPanel.new(
@@ -108,7 +179,7 @@ local statPanel = grafana.statPanel;
           unit='s',
         )
         .addTarget(prometheus.target('avg(probe_duration_seconds{job=~"$job"})' % $._config, intervalFactor=1)),
-        gridPos={ h: 4, w: 6, x: 18, y: 1 }
+        gridPos={ h: 4, w: 6, x: 18, y: 2 }
       )
       .addPanel(individualProbesRow, gridPos={ h: 1, w: 24, x: 0, y: 5 })
       .addPanel(
