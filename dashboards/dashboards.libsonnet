@@ -77,7 +77,7 @@ local statPanel = grafana.statPanel;
             links: [
               {
                 title: '',
-                url: 'd/' + $._config.dashboardUid + 'blackbox-exporter?var-instance=${__field.labels.instance}﻿﻿﻿&var-job=${__field.labels.job}',
+                url: 'd/' + $._config.dashboardUid + '/blackbox-exporter?var-instance=${__field.labels.instance}﻿﻿﻿&var-job=${__field.labels.job}',
               },
             ],
             unit: 'short',
