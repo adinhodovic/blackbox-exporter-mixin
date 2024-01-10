@@ -33,7 +33,7 @@ local tsLegend = tsOptions.legend;
         'datasource',
         'prometheus',
       ) +
-      datasource.generalOptions.withLabel('Data Source'),
+      datasource.generalOptions.withLabel('Data source'),
 
     local jobVariable =
       query.new(
@@ -127,6 +127,7 @@ local tsLegend = tsOptions.legend;
           probesQuery,
         )
       ) +
+      stStandardOptions.withUnit('short') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0.0) +
@@ -272,6 +273,7 @@ local tsLegend = tsOptions.legend;
         ) +
         prometheus.withInstant(true),
       ) +
+      stStandardOptions.withUnit('short') +
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withMappings(
@@ -303,6 +305,7 @@ local tsLegend = tsOptions.legend;
         prometheus.withInstant(true),
       ) +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
+      stStandardOptions.withUnit('short') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0) +
         stStandardOptions.threshold.step.withColor('green'),
@@ -334,6 +337,7 @@ local tsLegend = tsOptions.legend;
       ) +
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
+      stStandardOptions.withUnit('short') +
       stStandardOptions.withMappings([
         stStandardOptions.mapping.ValueMap.withType('value') +
         stStandardOptions.mapping.ValueMap.withOptions(
@@ -365,6 +369,7 @@ local tsLegend = tsOptions.legend;
       ) +
       stOptions.withTextMode('name') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
+      stStandardOptions.withUnit('short') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0) +
         stStandardOptions.threshold.step.withColor('red'),
@@ -392,6 +397,7 @@ local tsLegend = tsOptions.legend;
       ) +
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
+      stStandardOptions.withUnit('short') +
       stStandardOptions.withMappings(
         stStandardOptions.mapping.ValueMap.withType('value') +
         stStandardOptions.mapping.ValueMap.withOptions(
@@ -413,6 +419,7 @@ local tsLegend = tsOptions.legend;
       statPanel.new(
         'HTTP Version',
       ) +
+      stStandardOptions.withUnit('short') +
       stQueryOptions.withTargets(
         prometheus.new(
           '$datasource',
@@ -441,9 +448,9 @@ local tsLegend = tsOptions.legend;
           sslCertificateExpiryQuery,
         )
       ) +
-      stStandardOptions.withUnit('s') +
       stOptions.withColorMode('background') +
       stOptions.withGraphMode('none') +
+      stStandardOptions.withUnit('s') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0.0) +
         stStandardOptions.threshold.step.withColor('red'),
