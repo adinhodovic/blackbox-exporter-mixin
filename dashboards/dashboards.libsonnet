@@ -91,22 +91,23 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withUnit('short') +
       stQueryOptions.withMaxDataPoints(100) +
-      stOptions.withMappings(
-        stOptions.mapping.ValueMap.withOptions([
-          { '0': { text: 'Down', color: 'red' } },
-          { '1': { text: 'Up', color: 'green' } },
-        ])
+      stStandardOptions.withMappings(
+        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withOptions(
+          {
+            '0': { text: 'Down', color: 'red' },
+            '1': { text: 'Up', color: 'green' },
+          }
+        )
       ) +
-      stPanelOptions.withLinks(
-        stPanelOptions.links.withLinks([
-          stPanelOptions.link.withTitle('Go To Probe') +
-          stPanelOptions.link.withType('link') +
-          stPanelOptions.link.withUrl(
-            'd/' + $._config.dashboardUid + '/blackbox-exporter?var-instance=${__field.labels.instance}&var-job=${__field.labels.job}',
-          ) +
-          stPanelOptions.link.withTargetBlank(true),
-        ])
-      ),
+      stStandardOptions.withLinks([
+        stPanelOptions.link.withTitle('Go To Probe') +
+        stPanelOptions.link.withType('link') +
+        stPanelOptions.link.withUrl(
+          'd/' + $._config.dashboardUid + '/blackbox-exporter?var-instance=${__field.labels.instance}&var-job=${__field.labels.job}',
+        ) +
+        stPanelOptions.link.withTargetBlank(true),
+      ]),
 
     local probesQuery = |||
       count(
@@ -161,6 +162,7 @@ local tsLegend = tsOptions.legend;
         )
       ) +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
+      stStandardOptions.withUnit('percentunit') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0.0) +
         stStandardOptions.threshold.step.withColor('red'),
@@ -259,7 +261,7 @@ local tsLegend = tsOptions.legend;
       }
     |||,
 
-    local probeSucessStatPanel =
+    local probeSuccessStatPanel =
       statPanel.new(
         'Probe Success',
       ) +
@@ -272,11 +274,14 @@ local tsLegend = tsOptions.legend;
       ) +
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stOptions.withMappings(
-        stOptions.mapping.ValueMap.withOptions([
-          { '0': { text: 'No', color: 'red' } },
-          { '1': { text: 'Yes', color: 'green' } },
-        ])
+      stStandardOptions.withMappings(
+        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withOptions(
+          {
+            '0': { text: 'No', color: 'red' },
+            '1': { text: 'Yes', color: 'green' },
+          }
+        )
       ),
 
     local latestResponseCodeQuery = |||
@@ -327,18 +332,16 @@ local tsLegend = tsOptions.legend;
         ) +
         prometheus.withInstant(true),
       ) +
+      stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stOptions.withMappings([
-        stOptions.mapping.ValueMap.withOptions([
-          { '0': { text: 'No', color: 'red' } },
-          { '1': { text: 'Yes', color: 'green' } },
-        ]),
-      ]) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(1) +
-        stStandardOptions.threshold.step.withColor('green'),
+      stStandardOptions.withMappings([
+        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withOptions(
+          {
+            '0': { text: 'No', color: 'red' },
+            '1': { text: 'Yes', color: 'green' },
+          }
+        ),
       ]),
 
     local sslVersionQuery = |||
@@ -357,8 +360,8 @@ local tsLegend = tsOptions.legend;
           '$datasource',
           sslVersionQuery,
         ) +
-        prometheus.withInstant(true),
-        prometheus.withLegendFormat('{{version}}'),
+        prometheus.withInstant(true) +
+        prometheus.withLegendFormat('{{version}}')
       ) +
       stOptions.withTextMode('name') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
@@ -387,20 +390,17 @@ local tsLegend = tsOptions.legend;
         ) +
         prometheus.withInstant(true),
       ) +
-      stOptions.withTextMode('name') +
+      stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stOptions.withMappings(
-        stOptions.mapping.ValueMap.withOptions([
-          { '0': { text: 'No', color: 'blue' } },
-          { '1': { text: 'Yes', color: 'green' } },
-        ])
-      ) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('blue'),
-        stStandardOptions.threshold.step.withValue(1) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+      stStandardOptions.withMappings(
+        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withOptions(
+          {
+            '0': { text: 'No', color: 'green' },
+            '1': { text: 'Yes', color: 'blue' },
+          }
+        ),
+      ),
 
     local httpVersionQuery = |||
       probe_http_version{
@@ -418,7 +418,7 @@ local tsLegend = tsOptions.legend;
           '$datasource',
           httpVersionQuery,
         ) +
-        prometheus.withInstant(true),
+        prometheus.withInstant(true) +
         prometheus.withLegendFormat('{{version}}'),
       ) +
       stOptions.reduceOptions.withCalcs(['lastNotNull']),
@@ -443,6 +443,7 @@ local tsLegend = tsOptions.legend;
       ) +
       stStandardOptions.withUnit('s') +
       stOptions.withColorMode('background') +
+      stOptions.withGraphMode('none') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0.0) +
         stStandardOptions.threshold.step.withColor('red'),
@@ -496,7 +497,7 @@ local tsLegend = tsOptions.legend;
           job=~"$job",
           instance=~"$instance"
         }
-      ) by (instance)',
+      ) by (instance)
     |||,
     local probeTotalDurationQuery = std.strReplace(probeHttpDurationQuery, 'probe_http_duration_seconds', 'probe_duration_seconds'),
 
@@ -531,7 +532,6 @@ local tsLegend = tsOptions.legend;
       tsLegend.withCalcs(['mean', 'max']) +
       tsLegend.withSortBy('Mean') +
       tsLegend.withSortDesc(true) +
-      tsCustom.stacking.withMode('value') +
       tsCustom.withFillOpacity(10) +
       tsCustom.withSpanNulls(false),
 
@@ -542,7 +542,7 @@ local tsLegend = tsOptions.legend;
           job=~"$job",
           instance=~"$instance"
         }
-      ) by (phase)',
+      ) by (phase)
     |||,
     local probeIcmpPhaseDurationQuery = std.strReplace(probeHttpPhaseDurationQuery, 'probe_http_duration_seconds', 'probe_icmp_duration_seconds'),
 
@@ -612,7 +612,7 @@ local tsLegend = tsOptions.legend;
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +
           row.gridPos.withH(1),
-          uptimeStatPanel +
+          statusMapStatPanel +
           statPanel.gridPos.withX(0) +
           statPanel.gridPos.withY(1) +
           statPanel.gridPos.withW(24) +
@@ -634,50 +634,50 @@ local tsLegend = tsOptions.legend;
           statPanel.gridPos.withX(0) +
           statPanel.gridPos.withY(11) +
           statPanel.gridPos.withW(6) +
-          statPanel.gridPos.withH(3),
+          statPanel.gridPos.withH(4),
         ] +
         grid.makeGrid(
-          [probesSuccessStatPanel, latestResponseCodeStatPanel],
+          [probeSuccessStatPanel, latestResponseCodeStatPanel],
           panelWidth=3,
           panelHeight=3,
-          startY=14
+          startY=15
         ) +
         grid.makeGrid(
           [sslStatPanel, sslVersionStatPanel],
           panelWidth=3,
           panelHeight=3,
-          startY=17
-        ) +
-        grid.makeGrid(
-          [redirectsStatPanel, httpVersionStatPanel],
-          panelWidth=3,
-          panelHeight=3,
-          startY=20
+          startY=18
         ) +
         [
           sslCertificateExpiryStatPanel +
           statPanel.gridPos.withX(0) +
-          statPanel.gridPos.withY(23) +
+          statPanel.gridPos.withY(21) +
           statPanel.gridPos.withW(6) +
           statPanel.gridPos.withH(3),
         ] +
         grid.makeGrid(
-          [averageLatencyStatPanel, averageDnsLookupStatPanel],
+          [redirectsStatPanel, httpVersionStatPanel],
           panelWidth=3,
           panelHeight=3,
-          startY=26
+          startY=24
+        ) +
+        grid.makeGrid(
+          [averageLatencyStatPanel, averageDnsLookupStatPanel],
+          panelWidth=3,
+          panelHeight=4,
+          startY=27
         ) +
         [
           probeDurationTimeSeriesPanel +
           timeSeriesPanel.gridPos.withX(6) +
           timeSeriesPanel.gridPos.withY(11) +
           timeSeriesPanel.gridPos.withW(18) +
-          timeSeriesPanel.gridPos.withH(9),
+          timeSeriesPanel.gridPos.withH(10),
           probePhaseTimeSeriesPanel +
           timeSeriesPanel.gridPos.withX(6) +
-          timeSeriesPanel.gridPos.withY(20) +
+          timeSeriesPanel.gridPos.withY(21) +
           timeSeriesPanel.gridPos.withW(18) +
-          timeSeriesPanel.gridPos.withH(9),
+          timeSeriesPanel.gridPos.withH(10),
         ]
       ),
   },
