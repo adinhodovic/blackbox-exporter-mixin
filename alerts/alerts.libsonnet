@@ -13,7 +13,7 @@
               severity: 'critical',
             },
             annotations: {
-              summary: 'Probe has failed for the past minute.',
+              summary: 'Probe has failed for the past %(probeFailedInterval)s interval.' % $._config,
               description: 'The probe failed for the instance {{ $labels.instance }}.',
               dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?instance={{ $labels.instance }}' % $._config,
             },
