@@ -87,6 +87,8 @@ local tsLegend = tsOptions.legend;
         ),
       ) +
       stOptions.withTextMode('value_and_name') +
+      stOptions.text.withTitleSize(18) +
+      stOptions.text.withValueSize(18) +
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withUnit('short') +
