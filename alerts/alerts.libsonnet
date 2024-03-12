@@ -13,7 +13,7 @@
               severity: 'critical',
             },
             annotations: {
-              summary: 'Probe has failed for the past minute.',
+              summary: 'Probe has failed for the past %(probeFailedInterval)s interval.' % $._config,
               description: 'The probe failed for the instance {{ $labels.instance }}.',
               dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?instance={{ $labels.instance }}' % $._config,
             },
@@ -35,16 +35,18 @@
           },
           {
             alert: 'BlackboxSslCertificateWillExpireSoon',
-            // Cert-manager defaults to 3 week renewal time
             expr: |||
-              probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < 21 * 24 * 3600
+              probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < %(probeSslExpireDaysThreshold)s * 24 * 3600
             ||| % $._config,
             labels: {
               severity: 'warning',
             },
             annotations: {
               summary: 'SSL certificate will expire soon.',
-              description: 'The SSL certificate of the instance {{ $labels.instance }} is expiring within 3 weeks.',
+              description: |||
+                The SSL certificate of the instance {{ $labels.instance }} is expiring within %(probeSslExpireDaysThreshold)s days.
+                Actual time left: {{ $value | humanizeDuration }}.
+              ||| % $._config,
               dashboard_url: '%(grafanaUrl)s/d/%(dashboardUid)s/blackbox-exporter?instance={{ $labels.instance }}' % $._config,
             },
           },

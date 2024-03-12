@@ -17,7 +17,7 @@ tests:
               instance: test
               severity: critical
             exp_annotations:
-              summary: 'Probe has failed for the past minute.'
+              summary: 'Probe has failed for the past 1m interval.'
               description: 'The probe failed for the instance test.'
               dashboard_url: 'https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?instance=test'
   - interval: 1d
