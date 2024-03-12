@@ -19,5 +19,8 @@
     uptimeThreshold: 99.9,
     // The period in minutes to consider for the probe to fail
     probeFailedInterval: '1m',
+
+    //Cert-manager defaults to 3 week renewal time
+    probeSslExpireDaysThreshold: '21',
   },
 }
