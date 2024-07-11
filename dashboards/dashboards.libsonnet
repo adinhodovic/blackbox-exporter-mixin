@@ -94,7 +94,7 @@ local tsLegend = tsOptions.legend;
       stStandardOptions.withUnit('short') +
       stQueryOptions.withMaxDataPoints(100) +
       stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withType() +
         stStandardOptions.mapping.ValueMap.withOptions(
           {
             '0': { text: 'Down', color: 'red' },
@@ -279,7 +279,7 @@ local tsLegend = tsOptions.legend;
       stOptions.withColorMode('background') +
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withType() +
         stStandardOptions.mapping.ValueMap.withOptions(
           {
             '0': { text: 'No', color: 'red' },
@@ -341,7 +341,7 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withUnit('short') +
       stStandardOptions.withMappings([
-        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withType() +
         stStandardOptions.mapping.ValueMap.withOptions(
           {
             '0': { text: 'No', color: 'red' },
@@ -401,7 +401,7 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['lastNotNull']) +
       stStandardOptions.withUnit('short') +
       stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType('value') +
+        stStandardOptions.mapping.ValueMap.withType() +
         stStandardOptions.mapping.ValueMap.withOptions(
           {
             '0': { text: 'No', color: 'green' },
