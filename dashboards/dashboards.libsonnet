@@ -606,7 +606,7 @@ local tsLegend = tsOptions.legend;
       dashboard.new(
         'Blackbox Exporter',
       ) +
-      dashboard.withDescription('A dashboard that monitors the Blackbox-exporter. It is created using the blackbox-exporter-mixin for the the (blackbox-exporter)[https://github.com/prometheus/blackbox-exporter].') +
+      dashboard.withDescription('A dashboard that monitors the Blackbox-exporter. It is created using the [blackbox-exporter-mixin](https://github.com/adinhodovic/blackbox-exporter-mixin) for the the (blackbox-exporter)[https://github.com/prometheus/blackbox_exporter].') +
       dashboard.withUid($._config.dashboardUid) +
       dashboard.withTags($._config.tags) +
       dashboard.withTimezone('utc') +
