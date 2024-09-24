@@ -1,7 +1,7 @@
 {
    "__inputs": [ ],
    "__requires": [ ],
-   "description": "A dashboard that monitors the Blackbox-exporter. It is created using the blackbox-exporter-mixin for the the (blackbox-exporter)[https://github.com/prometheus/blackbox-exporter].",
+   "description": "A dashboard that monitors the Blackbox-exporter. It is created using the [blackbox-exporter-mixin](https://github.com/adinhodovic/blackbox-exporter-mixin) for the the (blackbox-exporter)[https://github.com/prometheus/blackbox_exporter].",
    "editable": true,
    "panels": [
       {
