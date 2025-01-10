@@ -483,11 +483,11 @@ local tsLegend = tsOptions.legend;
       ) +
       stOptions.withColorMode('background') +
       stOptions.withGraphMode('none') +
-      stStandardOptions.withUnit('s') +
+      stStandardOptions.withUnit('dtdurations') +
       stStandardOptions.thresholds.withSteps([
         stStandardOptions.threshold.step.withValue(0.0) +
         stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(1814400) +
+        stStandardOptions.threshold.step.withValue(($._config.probeSslExpireDaysThreshold) * 24 * 3600) +
         stStandardOptions.threshold.step.withColor('green'),
       ]),
 

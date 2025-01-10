@@ -21,6 +21,6 @@
     probeFailedInterval: '1m',
 
     //Cert-manager defaults to 3 week renewal time
-    probeSslExpireDaysThreshold: '21',
+    probeSslExpireDaysThreshold: 21,
   },
 }
