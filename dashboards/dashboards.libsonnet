@@ -684,33 +684,33 @@ local tsLegend = tsOptions.legend;
         grid.makeGrid(
           [probeSuccessStatPanel, latestResponseCodeStatPanel],
           panelWidth=3,
-          panelHeight=3,
+          panelHeight=2,
           startY=15
         ) +
         grid.makeGrid(
           [sslStatPanel, sslVersionStatPanel],
           panelWidth=3,
-          panelHeight=3,
-          startY=18
+          panelHeight=2,
+          startY=17
         ) +
         [
           sslCertificateExpiryStatPanel +
           statPanel.gridPos.withX(0) +
-          statPanel.gridPos.withY(21) +
+          statPanel.gridPos.withY(19) +
           statPanel.gridPos.withW(6) +
-          statPanel.gridPos.withH(3),
+          statPanel.gridPos.withH(2),
         ] +
         grid.makeGrid(
           [redirectsStatPanel, httpVersionStatPanel],
           panelWidth=3,
-          panelHeight=3,
-          startY=24
+          panelHeight=2,
+          startY=22
         ) +
         grid.makeGrid(
           [averageLatencyStatPanel, averageDnsLookupStatPanel],
           panelWidth=3,
           panelHeight=4,
-          startY=27
+          startY=25
         ) +
         [
           probeDurationTimeSeriesPanel +
