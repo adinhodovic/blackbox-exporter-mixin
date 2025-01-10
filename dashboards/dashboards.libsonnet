@@ -257,6 +257,37 @@ local tsLegend = tsOptions.legend;
         stStandardOptions.threshold.step.withColor('green'),
       ]),
 
+    local uptime30dQuery = |||
+      avg_over_time(
+        probe_success{
+          job=~"$job",
+          instance=~"$instance"
+        }[30d]
+      )
+    |||,
+
+    local uptime30dStatPanel =
+      statPanel.new(
+        'Uptime 30d',
+      ) +
+      stQueryOptions.withTargets(
+        prometheus.new(
+          '$datasource',
+          uptime30dQuery,
+        )
+      ) +
+      stStandardOptions.withUnit('percentunit') +
+      stOptions.withColorMode('background') +
+      stOptions.reduceOptions.withCalcs(['mean']) +
+      stStandardOptions.thresholds.withSteps([
+        stStandardOptions.threshold.step.withValue(0.0) +
+        stStandardOptions.threshold.step.withColor('red'),
+        stStandardOptions.threshold.step.withValue(0.99) +
+        stStandardOptions.threshold.step.withColor('yellow'),
+        stStandardOptions.threshold.step.withValue(0.999) +
+        stStandardOptions.threshold.step.withColor('green'),
+      ]),
+
     local probeSuccessQuery = |||
       probe_success{
         job=~"$job",
@@ -642,6 +673,11 @@ local tsLegend = tsOptions.legend;
           uptimeStatPanel +
           statPanel.gridPos.withX(0) +
           statPanel.gridPos.withY(11) +
+          statPanel.gridPos.withW(6) +
+          statPanel.gridPos.withH(4),
+          uptime30dStatPanel +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(15) +
           statPanel.gridPos.withW(6) +
           statPanel.gridPos.withH(4),
         ] +
