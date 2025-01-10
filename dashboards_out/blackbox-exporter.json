@@ -346,60 +346,6 @@
          },
          "fieldConfig": {
             "defaults": {
-               "thresholds": {
-                  "steps": [
-                     {
-                        "color": "red",
-                        "value": 0
-                     },
-                     {
-                        "color": "yellow",
-                        "value": 0.98999999999999999
-                     },
-                     {
-                        "color": "green",
-                        "value": 0.999
-                     }
-                  ]
-               },
-               "unit": "percentunit"
-            }
-         },
-         "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 0,
-            "y": 15
-         },
-         "id": 9,
-         "options": {
-            "colorMode": "background",
-            "reduceOptions": {
-               "calcs": [
-                  "mean"
-               ]
-            }
-         },
-         "pluginVersion": "v11.0.0",
-         "targets": [
-            {
-               "datasource": {
-                  "type": "prometheus",
-                  "uid": "$datasource"
-               },
-               "expr": "avg_over_time(\n  probe_success{\n    job=~\"$job\",\n    instance=~\"$instance\"\n  }[30d]\n)\n"
-            }
-         ],
-         "title": "Uptime 30d",
-         "type": "stat"
-      },
-      {
-         "datasource": {
-            "type": "datasource",
-            "uid": "-- Mixed --"
-         },
-         "fieldConfig": {
-            "defaults": {
                "mappings": [
                   {
                      "options": {
@@ -419,12 +365,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 0,
             "y": 15
          },
-         "id": 10,
+         "id": 9,
          "options": {
             "colorMode": "background",
             "reduceOptions": {
@@ -478,12 +424,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 3,
             "y": 15
          },
-         "id": 11,
+         "id": 10,
          "options": {
             "reduceOptions": {
                "calcs": [
@@ -531,12 +477,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 0,
-            "y": 17
+            "y": 18
          },
-         "id": 12,
+         "id": 11,
          "options": {
             "colorMode": "background",
             "reduceOptions": {
@@ -582,12 +528,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 3,
-            "y": 17
+            "y": 18
          },
-         "id": 13,
+         "id": 12,
          "options": {
             "reduceOptions": {
                "calcs": [
@@ -630,16 +576,16 @@
                      }
                   ]
                },
-               "unit": "s"
+               "unit": "dtdurations"
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 6,
             "x": 0,
-            "y": 19
+            "y": 21
          },
-         "id": 14,
+         "id": 13,
          "options": {
             "colorMode": "background",
             "graphMode": "none"
@@ -683,12 +629,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 0,
-            "y": 22
+            "y": 24
          },
-         "id": 15,
+         "id": 14,
          "options": {
             "colorMode": "background",
             "reduceOptions": {
@@ -722,12 +668,12 @@
             }
          },
          "gridPos": {
-            "h": 2,
+            "h": 3,
             "w": 3,
             "x": 3,
-            "y": 22
+            "y": 24
          },
-         "id": 16,
+         "id": 15,
          "options": {
             "reduceOptions": {
                "calcs": [
@@ -764,9 +710,9 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 25
+            "y": 27
          },
-         "id": 17,
+         "id": 16,
          "options": {
             "reduceOptions": {
                "calcs": [
@@ -801,9 +747,9 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 25
+            "y": 27
          },
-         "id": 18,
+         "id": 17,
          "options": {
             "reduceOptions": {
                "calcs": [
@@ -844,7 +790,7 @@
             "x": 6,
             "y": 11
          },
-         "id": 19,
+         "id": 18,
          "options": {
             "legend": {
                "calcs": [
@@ -907,7 +853,7 @@
             "x": 6,
             "y": 21
          },
-         "id": 20,
+         "id": 19,
          "options": {
             "legend": {
                "calcs": [
