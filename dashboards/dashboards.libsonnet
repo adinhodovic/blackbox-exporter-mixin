@@ -68,9 +68,9 @@ local tsLegend = tsOptions.legend;
     ],
 
     local statusMapQuery = |||
-      probe_success{
+      max by (instance) (probe_success{
         job=~"$job"
-      }
+      })
     ||| % $._config,
 
     local statusMapStatPanel =
@@ -229,10 +229,10 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['lastNotNull']),
 
     local uptimeQuery = |||
-      probe_success{
+      max by (instance) (probe_success{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local uptimeStatPanel =
@@ -289,10 +289,10 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local probeSuccessQuery = |||
-      probe_success{
+      max by (instance) (probe_success{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local probeSuccessStatPanel =
@@ -320,10 +320,10 @@ local tsLegend = tsOptions.legend;
       ),
 
     local latestResponseCodeQuery = |||
-      probe_http_status_code{
+      max by (instance) (probe_http_status_code{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local latestResponseCodeStatPanel =
@@ -351,10 +351,10 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local sslQuery = |||
-      probe_http_ssl{
+      max by (instance) (probe_http_ssl{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local sslStatPanel =
@@ -382,10 +382,10 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local sslVersionQuery = |||
-      probe_tls_version_info{
+      max by (instance,version) (probe_tls_version_info{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local sslVersionStatPanel =
@@ -411,10 +411,10 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local redirectsQuery = |||
-      probe_http_redirects{
+      max by (instance) (probe_http_redirects{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local redirectsStatPanel =
@@ -442,10 +442,10 @@ local tsLegend = tsOptions.legend;
       ),
 
     local httpVersionQuery = |||
-      probe_http_version{
+      max by (instance) (probe_http_version{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local httpVersionStatPanel =
@@ -465,10 +465,10 @@ local tsLegend = tsOptions.legend;
 
 
     local sslCertificateExpiryQuery = |||
-      probe_ssl_earliest_cert_expiry{
+      min by (instance) (probe_ssl_earliest_cert_expiry{
         job=~"$job",
         instance=~"$instance"
-      } - time()
+      } - time())
     |||,
 
     local sslCertificateExpiryStatPanel =
@@ -492,10 +492,10 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local averageLatencyQuery = |||
-      probe_duration_seconds{
+      avg by (instance) (probe_duration_seconds{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local averageLatencyStatPanel =
@@ -512,10 +512,10 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['mean']),
 
     local averageDnsLookupQuery = |||
-      probe_dns_lookup_time_seconds{
+      avg by (instance) (probe_dns_lookup_time_seconds{
         job=~"$job",
         instance=~"$instance"
-      }
+      })
     |||,
 
     local averageDnsLookupStatPanel =
@@ -532,14 +532,22 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['mean']),
 
     local probeHttpDurationQuery = |||
-      sum(
-        probe_http_duration_seconds{
+      sum by (instance) (
+        avg by (phase,instance) (
+          probe_http_duration_seconds{
+            job=~"$job",
+            instance=~"$instance"
+          }
+      ))
+    |||,
+    local probeTotalDurationQuery = |||
+      avg by (instance) (
+        probe_duration_seconds{
           job=~"$job",
           instance=~"$instance"
         }
-      ) by (instance)
+      )
     |||,
-    local probeTotalDurationQuery = std.strReplace(probeHttpDurationQuery, 'probe_http_duration_seconds', 'probe_duration_seconds'),
 
     local probeDurationTimeSeriesPanel =
       timeSeriesPanel.new(
@@ -577,7 +585,7 @@ local tsLegend = tsOptions.legend;
 
 
     local probeHttpPhaseDurationQuery = |||
-      sum(
+      avg(
         probe_http_duration_seconds{
           job=~"$job",
           instance=~"$instance"
