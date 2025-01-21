@@ -532,14 +532,22 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['mean']),
 
     local probeHttpDurationQuery = |||
-      sum(
-        probe_http_duration_seconds{
+      avg by (instance) (
+        sum without (phase) (
+          probe_http_duration_seconds{
+            job=~"$job",
+            instance=~"$instance"
+          }
+      ))
+    |||,
+    local probeTotalDurationQuery = |||
+      avg by (instance) (
+        probe_duration_seconds{
           job=~"$job",
           instance=~"$instance"
         }
-      ) by (instance)
+      )
     |||,
-    local probeTotalDurationQuery = std.strReplace(probeHttpDurationQuery, 'probe_http_duration_seconds', 'probe_duration_seconds'),
 
     local probeDurationTimeSeriesPanel =
       timeSeriesPanel.new(
@@ -577,7 +585,7 @@ local tsLegend = tsOptions.legend;
 
 
     local probeHttpPhaseDurationQuery = |||
-      sum(
+      avg(
         probe_http_duration_seconds{
           job=~"$job",
           instance=~"$instance"
