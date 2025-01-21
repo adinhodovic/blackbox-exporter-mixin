@@ -411,7 +411,7 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local redirectsQuery = |||
-      max by (intance) (probe_http_redirects{
+      max by (instance) (probe_http_redirects{
         job=~"$job",
         instance=~"$instance"
       })
