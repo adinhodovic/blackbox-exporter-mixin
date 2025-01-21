@@ -533,7 +533,7 @@ local tsLegend = tsOptions.legend;
 
     local probeHttpDurationQuery = |||
       sum by (instance) (
-        avg by (phase,intance) (
+        avg by (phase,instance) (
           probe_http_duration_seconds{
             job=~"$job",
             instance=~"$instance"
