@@ -532,8 +532,8 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['mean']),
 
     local probeHttpDurationQuery = |||
-      avg by (instance) (
-        sum without (phase) (
+      sum by (instance) (
+        avg by (phase,intance) (
           probe_http_duration_seconds{
             job=~"$job",
             instance=~"$instance"

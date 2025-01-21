@@ -704,7 +704,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "max by (intance) (probe_http_redirects{\n  job=~\"$job\",\n  instance=~\"$instance\"\n})\n",
+               "expr": "max by (instance) (probe_http_redirects{\n  job=~\"$job\",\n  instance=~\"$instance\"\n})\n",
                "instant": true
             }
          ],
