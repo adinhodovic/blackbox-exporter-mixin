@@ -869,7 +869,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "avg by (instance) (\n  sum without (phase) (\n    probe_http_duration_seconds{\n      job=~\"$job\",\n      instance=~\"$instance\"\n    }\n))\n",
+               "expr": "sum by (instance) (\n  sum by (phase,instance) (\n    probe_http_duration_seconds{\n      job=~\"$job\",\n      instance=~\"$instance\"\n    }\n))\n",
                "legendFormat": "HTTP duration"
             },
             {
