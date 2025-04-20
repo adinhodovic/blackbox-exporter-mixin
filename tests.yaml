@@ -7,7 +7,7 @@ tests:
   - interval: 1m
     input_series:
       - series: 'probe_success{job="blackbox-exporter", instance="test"}'
-        values: '0+0x5'
+        values: "0+0x5"
     alert_rule_test:
       - eval_time: 5m
         alertname: BlackboxProbeFailed
@@ -17,13 +17,13 @@ tests:
               instance: test
               severity: critical
             exp_annotations:
-              summary: 'Probe has failed for the past 1m interval.'
-              description: 'The probe failed for the instance test.'
-              dashboard_url: 'https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?instance=test'
+              summary: "Probe has failed for the past 1m interval."
+              description: "The probe failed for the instance test."
+              dashboard_url: "https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?var-instance=test"
   - interval: 1d
     input_series:
       - series: 'probe_success{job="blackbox-exporter", instance="test"}'
-        values: '0+0x30'
+        values: "0+0x30"
     alert_rule_test:
       - eval_time: 10d
         alertname: BlackboxLowUptime30d
@@ -33,6 +33,6 @@ tests:
               instance: test
               severity: info
             exp_annotations:
-              summary: 'Probe uptime is lower than 99.9% for the last 30 days.'
-              description: 'The probe has a lower uptime than 99.9% the last 30 days for the instance test.'
-              dashboard_url: 'https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?instance=test'
+              summary: "Probe uptime is lower than 99.9% for the last 30 days."
+              description: "The probe has a lower uptime than 99.9% the last 30 days for the instance test."
+              dashboard_url: "https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?var-instance=test"
