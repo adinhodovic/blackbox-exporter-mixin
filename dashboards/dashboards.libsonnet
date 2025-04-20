@@ -33,12 +33,35 @@ local tsLegend = tsOptions.legend;
         'datasource',
         'prometheus',
       ) +
-      datasource.generalOptions.withLabel('Data source'),
+      datasource.generalOptions.withLabel('Data source') +
+      {
+        current: {
+          selected: true,
+          text: $._config.datasourceName,
+          value: $._config.datasourceName,
+        },
+      },
+
+    local clusterVariable =
+      query.new(
+        $._config.clusterLabel,
+        'label_values(probe_success{}, cluster)' % $._config,
+      ) +
+      query.withDatasourceFromVariable(datasourceVariable) +
+      query.withSort() +
+      query.generalOptions.withLabel('Cluster') +
+      query.refresh.onLoad() +
+      query.refresh.onTime() +
+      (
+        if $._config.showMultiCluster
+        then query.generalOptions.showOnDashboard.withLabelAndValue()
+        else query.generalOptions.showOnDashboard.withNothing()
+      ),
 
     local jobVariable =
       query.new(
         'job',
-        'label_values(probe_success{}, job)'
+        'label_values(probe_success{%(clusterLabel)s="$cluster"}, job)' % $._config,
       ) +
       query.withDatasourceFromVariable(datasourceVariable) +
       query.withSort(1) +
@@ -51,7 +74,7 @@ local tsLegend = tsOptions.legend;
     local instanceVariable =
       query.new(
         'instance',
-        'label_values(probe_success{job=~"$job"}, instance)'
+        'label_values(probe_success{%(clusterLabel)s="$cluster", job=~"$job"}, instance)' % $._config,
       ) +
       query.withDatasourceFromVariable(datasourceVariable) +
       query.withSort(1) +
@@ -63,14 +86,18 @@ local tsLegend = tsOptions.legend;
 
     local variables = [
       datasourceVariable,
+      clusterVariable,
       jobVariable,
       instanceVariable,
     ],
 
     local statusMapQuery = |||
-      max by (instance) (probe_success{
-        job=~"$job"
-      })
+      max by (instance) (
+        probe_success{
+          %(clusterLabel)s="$cluster",
+          job=~"$job"
+        }
+      )
     ||| % $._config,
 
     local statusMapStatPanel =
@@ -114,6 +141,7 @@ local tsLegend = tsOptions.legend;
     local probesQuery = |||
       count(
         probe_success{
+          %(clusterLabel)s="$cluster",
           job=~"$job"
         }
       )
@@ -142,6 +170,7 @@ local tsLegend = tsOptions.legend;
       (
         count(
           probe_success{
+            %(clusterLabel)s="$cluster",
             job=~"$job"
           } == 1
         )
@@ -149,6 +178,7 @@ local tsLegend = tsOptions.legend;
       ) /
       count(
         probe_success{
+          %(clusterLabel)s="$cluster",
           job=~"$job"
         }
       )
@@ -178,15 +208,17 @@ local tsLegend = tsOptions.legend;
     local probesSSLQuery = |||
       count(
         probe_http_ssl{
+          %(clusterLabel)s="$cluster",
           job=~"$job"
         } == 1
       ) /
       count(
         probe_http_version{
+          %(clusterLabel)s="$cluster",
           job=~"$job"
         }
       )
-    |||,
+    ||| % $._config,
 
     local probesSSLStatPanel =
       statPanel.new(
@@ -210,10 +242,11 @@ local tsLegend = tsOptions.legend;
     local probeDurationQuery = |||
       avg(
         probe_duration_seconds{
+          %(clusterLabel)s="$cluster",
           job=~"$job"
         }
       )
-    |||,
+    ||| % $._config,
 
     local probeDurationStatPanel =
       statPanel.new(
@@ -229,11 +262,14 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['lastNotNull']),
 
     local uptimeQuery = |||
-      max by (instance) (probe_success{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_success{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local uptimeStatPanel =
       statPanel.new(
@@ -260,11 +296,12 @@ local tsLegend = tsOptions.legend;
     local uptime30dQuery = |||
       avg_over_time(
         probe_success{
+          %(clusterLabel)s="$cluster",
           job=~"$job",
           instance=~"$instance"
         }[30d]
       )
-    |||,
+    ||| % $._config,
 
     local uptime30dStatPanel =
       statPanel.new(
@@ -289,11 +326,14 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local probeSuccessQuery = |||
-      max by (instance) (probe_success{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_success{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local probeSuccessStatPanel =
       statPanel.new(
@@ -320,11 +360,14 @@ local tsLegend = tsOptions.legend;
       ),
 
     local latestResponseCodeQuery = |||
-      max by (instance) (probe_http_status_code{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_http_status_code{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local latestResponseCodeStatPanel =
       statPanel.new(
@@ -351,11 +394,14 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local sslQuery = |||
-      max by (instance) (probe_http_ssl{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_http_ssl{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local sslStatPanel =
       statPanel.new(
@@ -382,11 +428,14 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local sslVersionQuery = |||
-      max by (instance,version) (probe_tls_version_info{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance,version) (
+        probe_tls_version_info{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local sslVersionStatPanel =
       statPanel.new(
@@ -411,11 +460,14 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local redirectsQuery = |||
-      max by (instance) (probe_http_redirects{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_http_redirects{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local redirectsStatPanel =
       statPanel.new(
@@ -442,11 +494,14 @@ local tsLegend = tsOptions.legend;
       ),
 
     local httpVersionQuery = |||
-      max by (instance) (probe_http_version{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      max by (instance) (
+        probe_http_version{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local httpVersionStatPanel =
       statPanel.new(
@@ -465,11 +520,14 @@ local tsLegend = tsOptions.legend;
 
 
     local sslCertificateExpiryQuery = |||
-      min by (instance) (probe_ssl_earliest_cert_expiry{
-        job=~"$job",
-        instance=~"$instance"
-      } - time())
-    |||,
+      min by (instance) (
+        probe_ssl_earliest_cert_expiry{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        } - time()
+      )
+    ||| % $._config,
 
     local sslCertificateExpiryStatPanel =
       statPanel.new(
@@ -492,11 +550,14 @@ local tsLegend = tsOptions.legend;
       ]),
 
     local averageLatencyQuery = |||
-      avg by (instance) (probe_duration_seconds{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      avg by (instance) (
+        probe_duration_seconds{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local averageLatencyStatPanel =
       statPanel.new(
@@ -512,11 +573,14 @@ local tsLegend = tsOptions.legend;
       stOptions.reduceOptions.withCalcs(['mean']),
 
     local averageDnsLookupQuery = |||
-      avg by (instance) (probe_dns_lookup_time_seconds{
-        job=~"$job",
-        instance=~"$instance"
-      })
-    |||,
+      avg by (instance) (
+        probe_dns_lookup_time_seconds{
+          %(clusterLabel)s="$cluster",
+          job=~"$job",
+          instance=~"$instance"
+        }
+      )
+    ||| % $._config,
 
     local averageDnsLookupStatPanel =
       statPanel.new(
@@ -535,19 +599,22 @@ local tsLegend = tsOptions.legend;
       sum by (instance) (
         avg by (phase,instance) (
           probe_http_duration_seconds{
+            %(clusterLabel)s="$cluster",
             job=~"$job",
             instance=~"$instance"
           }
-      ))
-    |||,
+        )
+      )
+    ||| % $._config,
     local probeTotalDurationQuery = |||
       avg by (instance) (
         probe_duration_seconds{
+          %(clusterLabel)s="$cluster",
           job=~"$job",
           instance=~"$instance"
         }
       )
-    |||,
+    ||| % $._config,
 
     local probeDurationTimeSeriesPanel =
       timeSeriesPanel.new(
@@ -587,11 +654,12 @@ local tsLegend = tsOptions.legend;
     local probeHttpPhaseDurationQuery = |||
       avg(
         probe_http_duration_seconds{
+          %(clusterLabel)s="$cluster",
           job=~"$job",
           instance=~"$instance"
         }
       ) by (phase)
-    |||,
+    ||| % $._config,
     local probeIcmpPhaseDurationQuery = std.strReplace(probeHttpPhaseDurationQuery, 'probe_http_duration_seconds', 'probe_icmp_duration_seconds'),
 
     local probePhaseTimeSeriesPanel =
