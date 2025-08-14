@@ -13,6 +13,9 @@
     // Default datasource name
     datasourceName: 'default',
 
+    // Datasource instance filter regex
+    datasourceFilterRegex: '',
+
     // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
     showMultiCluster: false,
     clusterLabel: 'cluster',

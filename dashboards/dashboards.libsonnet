@@ -33,6 +33,7 @@ local tsLegend = tsOptions.legend;
         'datasource',
         'prometheus',
       ) +
+      datasource.withRegex($._config.datasourceFilterRegex) +
       datasource.generalOptions.withLabel('Data source') +
       {
         current: {
