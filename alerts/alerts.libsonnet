@@ -4,14 +4,14 @@
     groups+: [
       {
         name: 'blackbox-exporter.rules',
-        rules: [
+        rules: std.prune([
           {
             alert: 'BlackboxProbeFailed',
             expr: |||
               probe_success{%(blackboxExporterSelector)s} == 0
             ||| % $._config,
             labels: {
-              severity: 'critical',
+              severity: $._config.blackboxProbeFailedSeverity,
             },
             annotations: {
               summary: 'Probe has failed for the past %(probeFailedInterval)s interval.' % $._config,
@@ -26,7 +26,7 @@
               avg_over_time(probe_success{%(blackboxExporterSelector)s}[%(uptimePeriodDays)sd]) * 100 < %(uptimeThreshold)s
             ||| % $._config,
             labels: {
-              severity: 'info',
+              severity: $._config.blackboxProbeLowUptimeSeverity,
             },
             annotations: {
               summary: 'Probe uptime is lower than %(uptimeThreshold)g%% for the last %(uptimePeriodDays)s days.' % $._config,
@@ -34,13 +34,13 @@
               dashboard_url: $._config.dashboardUrl + '?var-instance={{ $labels.instance }}' + clusterVariableQueryString,
             },
           },
-          {
+          if $._config.probleSslCertificateExpireEnabled then {
             alert: 'BlackboxSslCertificateWillExpireSoon',
             expr: |||
               probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < %(probeSslExpireDaysThreshold)s * 24 * 3600
             ||| % $._config,
             labels: {
-              severity: 'warning',
+              severity: $._config.blackboxProbeSslCertificateExpireSeverity,
             },
             annotations: {
               summary: 'SSL certificate will expire soon.',
@@ -51,7 +51,7 @@
               dashboard_url: $._config.dashboardUrl + '?var-instance={{ $labels.instance }}' + clusterVariableQueryString,
             },
           },
-        ],
+        ]),
       },
     ],
   },
