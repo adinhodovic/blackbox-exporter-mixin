@@ -23,7 +23,6 @@
     grafanaUrl: 'https://grafana.com',
     dashboardUid: 'blackbox-exporter-j4da',
     dashboardUrl: '%s/d/%s/blackbox-exporter' % [this.grafanaUrl, this.dashboardUid],
-    tags: ['blackbox-exporter', 'blackbox-exporter-mixin'],
 
     // The period in days to consider for the uptime evaluation
     uptimePeriodDays: 30,
@@ -31,8 +30,18 @@
     uptimeThreshold: 99.9,
     // The period in minutes to consider for the probe to fail
     probeFailedInterval: '1m',
-
-    //Cert-manager defaults to 3 week renewal time
+    // Severity for the probe failed alert
+    blackboxProbeFailedSeverity: 'critical',
+    // Severity for the low uptime alert
+    blackboxProbeLowUptimeSeverity: 'info',
+    // Enable SSL certificate expiration alerting
+    // Might overlap with certmanager alerts
+    probleSslCertificateExpireEnabled: true,
+    // Cert-manager defaults to 3 week renewal time
     probeSslExpireDaysThreshold: 21,
+    // Severity for the low uptime alert
+    blackboxProbeSslCertificateExpireSeverity: 'warning',
+
+    tags: ['blackbox-exporter', 'blackbox-exporter-mixin'],
   },
 }
