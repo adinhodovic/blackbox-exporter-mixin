@@ -701,7 +701,8 @@ local tsLegend = tsOptions.legend;
     local summaryRow =
       row.new(
         title='Summary'
-      ),
+      ) +
+      row.withCollapsed($._config.summaryRowCollapsed),
 
     local individualProbesRow =
       row.new(
