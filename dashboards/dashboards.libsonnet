@@ -702,7 +702,21 @@ local tsLegend = tsOptions.legend;
       row.new(
         title='Summary'
       ) +
-      row.withCollapsed($._config.summaryRowCollapsed),
+      row.withCollapsed($._config.summaryRowCollapsed) +
+      row.withPanels([
+          statusMapStatPanel +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(1) +
+          statPanel.gridPos.withW(24) +
+          statPanel.gridPos.withH(5),
+        ] +
+        grid.makeGrid(
+          [probesStatPanel, probesSuccessStatPanel, probesSSLStatPanel, probeDurationStatPanel],
+          panelWidth=6,
+          panelHeight=4,
+          startY=6
+        )
+      ),
 
     local individualProbesRow =
       row.new(
@@ -730,18 +744,7 @@ local tsLegend = tsOptions.legend;
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +
           row.gridPos.withH(1),
-          statusMapStatPanel +
-          statPanel.gridPos.withX(0) +
-          statPanel.gridPos.withY(1) +
-          statPanel.gridPos.withW(24) +
-          statPanel.gridPos.withH(5),
         ] +
-        grid.makeGrid(
-          [probesStatPanel, probesSuccessStatPanel, probesSSLStatPanel, probeDurationStatPanel],
-          panelWidth=6,
-          panelHeight=4,
-          startY=6
-        ) +
         [
           individualProbesRow +
           row.gridPos.withX(0) +
