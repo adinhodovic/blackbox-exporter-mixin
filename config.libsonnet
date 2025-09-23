@@ -42,6 +42,9 @@
     // Severity for the low uptime alert
     blackboxProbeSslCertificateExpireSeverity: 'warning',
 
+    // UI config
+    summaryRowCollapsed: false,
+
     tags: ['blackbox-exporter', 'blackbox-exporter-mixin'],
   },
 }
