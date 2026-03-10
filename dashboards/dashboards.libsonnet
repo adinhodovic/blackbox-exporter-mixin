@@ -1,4 +1,7 @@
+local util = import './util.libsonnet';
+local mixinUtils = import 'github.com/adinhodovic/mixin-utils/utils.libsonnet';
 local g = import 'github.com/grafana/grafonnet/gen/grafonnet-latest/main.libsonnet';
+
 local dashboard = g.dashboard;
 local row = g.panel.row;
 local grid = g.util.grid;
@@ -6,805 +9,595 @@ local grid = g.util.grid;
 local statPanel = g.panel.stat;
 local timeSeriesPanel = g.panel.timeSeries;
 
-local variable = dashboard.variable;
-local datasource = variable.datasource;
-local query = variable.query;
-local prometheus = g.query.prometheus;
-
-// Stat
-local stOptions = statPanel.options;
-local stStandardOptions = statPanel.standardOptions;
-local stQueryOptions = statPanel.queryOptions;
-local stPanelOptions = statPanel.panelOptions;
-
-// Timeseries
-local tsOptions = timeSeriesPanel.options;
-local tsStandardOptions = timeSeriesPanel.standardOptions;
-local tsQueryOptions = timeSeriesPanel.queryOptions;
-local tsFieldConfig = timeSeriesPanel.fieldConfig;
-local tsCustom = tsFieldConfig.defaults.custom;
-local tsLegend = tsOptions.legend;
-
 {
+  local dashboardName = 'blackbox-exporter',
   grafanaDashboards+:: {
+    ['%s.json' % dashboardName]:
 
-    local datasourceVariable =
-      datasource.new(
-        'datasource',
-        'prometheus',
-      ) +
-      datasource.withRegex($._config.datasourceFilterRegex) +
-      datasource.generalOptions.withLabel('Data source') +
-      {
-        current: {
-          selected: true,
-          text: $._config.datasourceName,
-          value: $._config.datasourceName,
-        },
-      },
+      local defaultVariables = util.variables($._config);
 
-    local clusterVariable =
-      query.new(
-        $._config.clusterLabel,
-        'label_values(probe_success{}, cluster)' % $._config,
-      ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort() +
-      query.generalOptions.withLabel('Cluster') +
-      query.refresh.onLoad() +
-      query.refresh.onTime() +
-      (
-        if $._config.showMultiCluster
-        then query.generalOptions.showOnDashboard.withLabelAndValue()
-        else query.generalOptions.showOnDashboard.withNothing()
-      ),
+      local variables = [
+        defaultVariables.datasource,
+        defaultVariables.cluster,
+        defaultVariables.job,
+        defaultVariables.instance,
+      ];
 
-    local jobVariable =
-      query.new(
-        'job',
-        'label_values(probe_success{%(clusterLabel)s="$cluster"}, job)' % $._config,
-      ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Job') +
-      query.selectionOptions.withMulti(true) +
-      query.selectionOptions.withIncludeAll(true) +
-      query.refresh.onLoad() +
-      query.refresh.onTime(),
+      local defaultFilters = util.filters($._config);
 
-    local instanceVariable =
-      query.new(
-        'instance',
-        'label_values(probe_success{%(clusterLabel)s="$cluster", job=~"$job"}, instance)' % $._config,
-      ) +
-      query.withDatasourceFromVariable(datasourceVariable) +
-      query.withSort(1) +
-      query.generalOptions.withLabel('Instance') +
-      query.selectionOptions.withMulti(false) +
-      query.selectionOptions.withIncludeAll(false) +
-      query.refresh.onLoad() +
-      query.refresh.onTime(),
+      local queries = {
+        // Summary
+        probesCount: |||
+          count(
+            probe_success{
+              %(default)s
+            }
+          )
+        ||| % defaultFilters,
 
-    local variables = [
-      datasourceVariable,
-      clusterVariable,
-      jobVariable,
-      instanceVariable,
-    ],
+        probesSuccessPercent: |||
+          (
+            count(
+              probe_success{
+                %(default)s
+              } == 1
+            )
+            OR vector(0)
+          ) /
+          count(
+            probe_success{
+              %(default)s
+            }
+          )
+        ||| % defaultFilters,
 
-    local statusMapQuery = |||
-      max by (instance) (
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        }
-      )
-    ||| % $._config,
+        probesSslPercent: |||
+          count(
+            probe_http_ssl{
+              %(default)s
+            } == 1
+          ) /
+          count(
+            probe_http_version{
+              %(default)s
+            }
+          )
+        ||| % defaultFilters,
 
-    local statusMapStatPanel =
-      statPanel.new(
-        'Status Map',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          statusMapQuery,
-        ) +
-        prometheus.withLegendFormat(
-          '{{instance}}'
+        probeAverageDuration: |||
+          avg(
+            probe_duration_seconds{
+              %(default)s
+            }
+          )
+        ||| % defaultFilters,
+
+        statusMap: |||
+          max by (instance) (
+            probe_success{
+              %(default)s
+            }
+          )
+        ||| % defaultFilters,
+
+        // Per-instance
+        uptime: |||
+          max by (instance) (
+            probe_success{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        uptime30d: |||
+          avg_over_time(
+            probe_success{
+              %(instance)s
+            }[30d]
+          )
+        ||| % defaultFilters,
+
+        probeSuccess: |||
+          max by (instance) (
+            probe_success{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        latestResponseCode: |||
+          max by (instance) (
+            probe_http_status_code{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        ssl: |||
+          max by (instance) (
+            probe_http_ssl{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        sslVersion: |||
+          max by (instance,version) (
+            probe_tls_version_info{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        redirects: |||
+          max by (instance) (
+            probe_http_redirects{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        httpVersion: |||
+          max by (instance) (
+            probe_http_version{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        sslCertificateExpiry: |||
+          min by (instance) (
+            probe_ssl_earliest_cert_expiry{
+              %(instance)s
+            } - time()
+          )
+        ||| % defaultFilters,
+
+        averageLatency: |||
+          avg by (instance) (
+            probe_duration_seconds{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        averageDnsLookup: |||
+          avg by (instance) (
+            probe_dns_lookup_time_seconds{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        probeHttpDuration: |||
+          sum by (instance) (
+            avg by (phase,instance) (
+              probe_http_duration_seconds{
+                %(instance)s
+              }
+            )
+          )
+        ||| % defaultFilters,
+
+        probeTotalDuration: |||
+          avg by (instance) (
+            probe_duration_seconds{
+              %(instance)s
+            }
+          )
+        ||| % defaultFilters,
+
+        probeHttpPhaseDuration: |||
+          avg(
+            probe_http_duration_seconds{
+              %(instance)s
+            }
+          ) by (phase)
+        ||| % defaultFilters,
+
+        probeIcmpPhaseDuration: std.strReplace(
+          self.probeHttpPhaseDuration,
+          'probe_http_duration_seconds',
+          'probe_icmp_duration_seconds'
         ),
-      ) +
-      stOptions.withTextMode('value_and_name') +
-      stOptions.text.withTitleSize(18) +
-      stOptions.text.withValueSize(18) +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('short') +
-      stQueryOptions.withMaxDataPoints(100) +
-      stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType() +
-        stStandardOptions.mapping.ValueMap.withOptions(
-          {
-            '0': { text: 'Down', color: 'red' },
-            '1': { text: 'Up', color: 'green' },
-          }
-        )
-      ) +
-      stStandardOptions.withLinks([
-        stPanelOptions.link.withTitle('Go To Probe') +
-        stPanelOptions.link.withType('link') +
-        stPanelOptions.link.withUrl(
-          'd/' + $._config.dashboardUid + '/blackbox-exporter?var-instance=${__field.labels.instance}&var-job=${__field.labels.job}',
-        ) +
-        stPanelOptions.link.withTargetBlank(true),
-      ]),
+      };
 
-    local probesQuery = |||
-      count(
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        }
-      )
-    ||| % $._config,
+      local panels = {
+        // Summary
+        statusMapStat:
+          mixinUtils.dashboards.statPanel(
+            'Status Map',
+            'short',
+            queries.statusMap,
+            description='Current up/down status for all probes. Each probe is shown as Up (green) or Down (red). Click a probe to navigate to its detail view.',
+            mappings=[
+              statPanel.standardOptions.mapping.ValueMap.withType() +
+              statPanel.standardOptions.mapping.ValueMap.withOptions(
+                {
+                  '0': { text: 'Down', color: 'red' },
+                  '1': { text: 'Up', color: 'green' },
+                }
+              ),
+            ],
+          ) +
+          statPanel.queryOptions.withTargets(
+            g.query.prometheus.new('${datasource}', queries.statusMap) +
+            g.query.prometheus.withLegendFormat('{{instance}}')
+          ) +
+          statPanel.options.withTextMode('value_and_name') +
+          statPanel.options.text.withTitleSize(18) +
+          statPanel.options.text.withValueSize(18) +
+          statPanel.options.withColorMode('background') +
+          statPanel.queryOptions.withMaxDataPoints(100) +
+          statPanel.standardOptions.withLinks([
+            statPanel.panelOptions.link.withTitle('Go To Probe') +
+            statPanel.panelOptions.link.withType('link') +
+            statPanel.panelOptions.link.withUrl(
+              'd/' + $._config.dashboardIds[dashboardName] + '/blackbox-exporter?var-instance=${__field.labels.instance}&var-job=${__field.labels.job}',
+            ) +
+            statPanel.panelOptions.link.withTargetBlank(true),
+          ]),
 
-    local probesStatPanel =
-      statPanel.new(
-        'Probes',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          probesQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('short') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.001) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+        probesCountStat:
+          mixinUtils.dashboards.statPanel(
+            'Probes',
+            'short',
+            queries.probesCount,
+            description='Total number of probes currently being monitored.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(0.001) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ),
 
-    local probesSuccessQuery = |||
-      (
-        count(
-          probe_success{
-            %(clusterLabel)s="$cluster",
-            job=~"$job"
-          } == 1
-        )
-        OR vector(0)
-      ) /
-      count(
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        }
-      )
-    ||| % $._config,
+        probesSuccessPercentStat:
+          mixinUtils.dashboards.statPanel(
+            'Probes Success',
+            'percentunit',
+            queries.probesSuccessPercent,
+            description='Percentage of probes currently reporting success.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(0.99) +
+              statPanel.standardOptions.threshold.step.withColor('yellow'),
+              statPanel.standardOptions.threshold.step.withValue(0.999) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ),
 
-    local probesSuccessStatPanel =
-      statPanel.new(
-        'Probes Success',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          probesSuccessQuery,
-        )
-      ) +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('percentunit') +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.99) +
-        stStandardOptions.threshold.step.withColor('yellow'),
-        stStandardOptions.threshold.step.withValue(0.999) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+        probesSslPercentStat:
+          mixinUtils.dashboards.statPanel(
+            'Probes SSL',
+            'percentunit',
+            queries.probesSslPercent,
+            description='Percentage of HTTP probes using SSL/TLS.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(0.999) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ),
 
-    local probesSSLQuery = |||
-      count(
-        probe_http_ssl{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        } == 1
-      ) /
-      count(
-        probe_http_version{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        }
-      )
-    ||| % $._config,
+        probeAverageDurationStat:
+          mixinUtils.dashboards.statPanel(
+            'Probe Average Duration',
+            's',
+            queries.probeAverageDuration,
+            description='Average probe duration across all monitored instances.',
+          ),
 
-    local probesSSLStatPanel =
-      statPanel.new(
-        'Probes SSL',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          probesSSLQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('percentunit') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.999) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+        // Per-instance
+        uptimeStat:
+          mixinUtils.dashboards.statPanel(
+            'Uptime',
+            'percentunit',
+            queries.uptime,
+            description='Current probe success rate for the selected instance.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(0.99) +
+              statPanel.standardOptions.threshold.step.withColor('yellow'),
+              statPanel.standardOptions.threshold.step.withValue(0.999) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ) +
+          statPanel.options.withColorMode('background') +
+          statPanel.options.reduceOptions.withCalcs(['mean']),
 
-    local probeDurationQuery = |||
-      avg(
-        probe_duration_seconds{
-          %(clusterLabel)s="$cluster",
-          job=~"$job"
-        }
-      )
-    ||| % $._config,
+        uptime30dStat:
+          mixinUtils.dashboards.statPanel(
+            'Uptime 30d',
+            'percentunit',
+            queries.uptime30d,
+            description='Average probe success rate over the last 30 days.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(0.99) +
+              statPanel.standardOptions.threshold.step.withColor('yellow'),
+              statPanel.standardOptions.threshold.step.withValue(0.999) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ) +
+          statPanel.options.withColorMode('background') +
+          statPanel.options.reduceOptions.withCalcs(['mean']),
 
-    local probeDurationStatPanel =
-      statPanel.new(
-        'Probe Average Duration',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          probeDurationQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('s') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']),
+        probeSuccessStat:
+          mixinUtils.dashboards.statPanel(
+            'Probe Success',
+            'short',
+            queries.probeSuccess,
+            instant=true,
+            description='Whether the most recent probe succeeded.',
+            mappings=[
+              statPanel.standardOptions.mapping.ValueMap.withType() +
+              statPanel.standardOptions.mapping.ValueMap.withOptions(
+                {
+                  '0': { text: 'No', color: 'red' },
+                  '1': { text: 'Yes', color: 'green' },
+                }
+              ),
+            ],
+          ) +
+          statPanel.options.withColorMode('background'),
 
-    local uptimeQuery = |||
-      max by (instance) (
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
+        latestResponseCodeStat:
+          mixinUtils.dashboards.statPanel(
+            'Latest Response Code',
+            'short',
+            queries.latestResponseCode,
+            instant=true,
+            description='Most recent HTTP status code returned by the probe.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+              statPanel.standardOptions.threshold.step.withValue(300) +
+              statPanel.standardOptions.threshold.step.withColor('blue'),
+              statPanel.standardOptions.threshold.step.withValue(400) +
+              statPanel.standardOptions.threshold.step.withColor('yellow'),
+              statPanel.standardOptions.threshold.step.withValue(500) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+            ],
+          ),
 
-    local uptimeStatPanel =
-      statPanel.new(
-        'Uptime',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          uptimeQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('percentunit') +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['mean']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.99) +
-        stStandardOptions.threshold.step.withColor('yellow'),
-        stStandardOptions.threshold.step.withValue(0.999) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+        sslStat:
+          mixinUtils.dashboards.statPanel(
+            'SSL',
+            'short',
+            queries.ssl,
+            instant=true,
+            description='Whether the probe endpoint is using SSL/TLS.',
+            mappings=[
+              statPanel.standardOptions.mapping.ValueMap.withType() +
+              statPanel.standardOptions.mapping.ValueMap.withOptions(
+                {
+                  '0': { text: 'No', color: 'red' },
+                  '1': { text: 'Yes', color: 'green' },
+                }
+              ),
+            ],
+          ) +
+          statPanel.options.withColorMode('background'),
 
-    local uptime30dQuery = |||
-      avg_over_time(
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }[30d]
-      )
-    ||| % $._config,
+        sslVersionStat:
+          mixinUtils.dashboards.statPanel(
+            'SSL Version',
+            'short',
+            queries.sslVersion,
+            instant=true,
+            description='TLS version negotiated for the probe connection.',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue(1) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ) +
+          statPanel.queryOptions.withTargets(
+            g.query.prometheus.new('${datasource}', queries.sslVersion) +
+            g.query.prometheus.withInstant(true) +
+            g.query.prometheus.withLegendFormat('{{version}}')
+          ) +
+          statPanel.options.withTextMode('name'),
 
-    local uptime30dStatPanel =
-      statPanel.new(
-        'Uptime 30d',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          uptime30dQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('percentunit') +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['mean']) +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(0.99) +
-        stStandardOptions.threshold.step.withColor('yellow'),
-        stStandardOptions.threshold.step.withValue(0.999) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
+        redirectsStat:
+          mixinUtils.dashboards.statPanel(
+            'Redirects',
+            'short',
+            queries.redirects,
+            instant=true,
+            description='Whether the probe followed any HTTP redirects.',
+            mappings=[
+              statPanel.standardOptions.mapping.ValueMap.withType() +
+              statPanel.standardOptions.mapping.ValueMap.withOptions(
+                {
+                  '0': { text: 'No', color: 'green' },
+                  '1': { text: 'Yes', color: 'blue' },
+                }
+              ),
+            ],
+          ) +
+          statPanel.options.withColorMode('background'),
 
-    local probeSuccessQuery = |||
-      max by (instance) (
-        probe_success{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
+        httpVersionStat:
+          mixinUtils.dashboards.statPanel(
+            'HTTP Version',
+            'short',
+            queries.httpVersion,
+            instant=true,
+            description='HTTP protocol version used by the probe.',
+          ) +
+          statPanel.queryOptions.withTargets(
+            g.query.prometheus.new('${datasource}', queries.httpVersion) +
+            g.query.prometheus.withInstant(true) +
+            g.query.prometheus.withLegendFormat('{{version}}')
+          ),
 
-    local probeSuccessStatPanel =
-      statPanel.new(
-        'Probe Success',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          probeSuccessQuery,
-        ) +
-        prometheus.withInstant(true),
-      ) +
-      stStandardOptions.withUnit('short') +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType() +
-        stStandardOptions.mapping.ValueMap.withOptions(
-          {
-            '0': { text: 'No', color: 'red' },
-            '1': { text: 'Yes', color: 'green' },
-          }
-        )
-      ),
+        sslCertificateExpiryStat:
+          mixinUtils.dashboards.statPanel(
+            'SSL Certificate Expiry',
+            'dtdurations',
+            queries.sslCertificateExpiry,
+            description='Time remaining until the SSL certificate expires. Red when below the configured threshold.',
+            graphMode='none',
+            steps=[
+              statPanel.standardOptions.threshold.step.withValue(0.0) +
+              statPanel.standardOptions.threshold.step.withColor('red'),
+              statPanel.standardOptions.threshold.step.withValue($._config.alerts.sslCertExpiry.expireDaysThreshold * 24 * 3600) +
+              statPanel.standardOptions.threshold.step.withColor('green'),
+            ],
+          ) +
+          statPanel.options.withColorMode('background'),
 
-    local latestResponseCodeQuery = |||
-      max by (instance) (
-        probe_http_status_code{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
+        averageLatencyStat:
+          mixinUtils.dashboards.statPanel(
+            'Average Latency',
+            's',
+            queries.averageLatency,
+            description='Mean probe duration for the selected instance.',
+          ) +
+          statPanel.options.reduceOptions.withCalcs(['mean']),
 
-    local latestResponseCodeStatPanel =
-      statPanel.new(
-        'Latest Response Code',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          latestResponseCodeQuery,
-        ) +
-        prometheus.withInstant(true),
-      ) +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('short') +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('green'),
-        stStandardOptions.threshold.step.withValue(300) +
-        stStandardOptions.threshold.step.withColor('blue'),
-        stStandardOptions.threshold.step.withValue(400) +
-        stStandardOptions.threshold.step.withColor('yellow'),
-        stStandardOptions.threshold.step.withValue(500) +
-        stStandardOptions.threshold.step.withColor('red'),
-      ]),
+        averageDnsLookupStat:
+          mixinUtils.dashboards.statPanel(
+            'Average DNS Lookup',
+            's',
+            queries.averageDnsLookup,
+            description='Mean DNS lookup time for the selected instance.',
+          ) +
+          statPanel.options.reduceOptions.withCalcs(['mean']),
 
-    local sslQuery = |||
-      max by (instance) (
-        probe_http_ssl{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
+        probeDurationTimeSeries:
+          mixinUtils.dashboards.timeSeriesPanel(
+            'Probe Duration',
+            's',
+            [
+              { expr: queries.probeHttpDuration, legend: 'HTTP duration' },
+              { expr: queries.probeTotalDuration, legend: 'Total probe duration' },
+            ],
+            description='HTTP phase duration and total probe duration over time for the selected instance.',
+          ),
 
-    local sslStatPanel =
-      statPanel.new(
-        'SSL',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          sslQuery,
-        ) +
-        prometheus.withInstant(true),
-      ) +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('short') +
-      stStandardOptions.withMappings([
-        stStandardOptions.mapping.ValueMap.withType() +
-        stStandardOptions.mapping.ValueMap.withOptions(
-          {
-            '0': { text: 'No', color: 'red' },
-            '1': { text: 'Yes', color: 'green' },
-          }
-        ),
-      ]),
+        probePhaseTimeSeries:
+          mixinUtils.dashboards.timeSeriesPanel(
+            'Probe Phases',
+            's',
+            [
+              { expr: queries.probeHttpPhaseDuration, legend: '{{ phase }}' },
+              { expr: queries.probeIcmpPhaseDuration, legend: '{{ phase }}' },
+            ],
+            description='Time spent in each probe phase (DNS, connect, TLS, processing, transfer) for the selected instance.',
+            stack='percent',
+          ),
+      };
 
-    local sslVersionQuery = |||
-      max by (instance,version) (
-        probe_tls_version_info{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
+      // Set this to 0 for the flat layout, -9 for the collapsed layout
+      local yOffset = if $._config.summaryRowCollapsed then -9 else 0;
 
-    local sslVersionStatPanel =
-      statPanel.new(
-        'SSL Version',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          sslVersionQuery,
-        ) +
-        prometheus.withInstant(true) +
-        prometheus.withLegendFormat('{{version}}')
-      ) +
-      stOptions.withTextMode('name') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('short') +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(1) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
-
-    local redirectsQuery = |||
-      max by (instance) (
-        probe_http_redirects{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
-
-    local redirectsStatPanel =
-      statPanel.new(
-        'Redirects',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          redirectsQuery,
-        ) +
-        prometheus.withInstant(true),
-      ) +
-      stOptions.withColorMode('background') +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']) +
-      stStandardOptions.withUnit('short') +
-      stStandardOptions.withMappings(
-        stStandardOptions.mapping.ValueMap.withType() +
-        stStandardOptions.mapping.ValueMap.withOptions(
-          {
-            '0': { text: 'No', color: 'green' },
-            '1': { text: 'Yes', color: 'blue' },
-          }
-        ),
-      ),
-
-    local httpVersionQuery = |||
-      max by (instance) (
-        probe_http_version{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
-
-    local httpVersionStatPanel =
-      statPanel.new(
-        'HTTP Version',
-      ) +
-      stStandardOptions.withUnit('short') +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          httpVersionQuery,
-        ) +
-        prometheus.withInstant(true) +
-        prometheus.withLegendFormat('{{version}}'),
-      ) +
-      stOptions.reduceOptions.withCalcs(['lastNotNull']),
-
-
-    local sslCertificateExpiryQuery = |||
-      min by (instance) (
-        probe_ssl_earliest_cert_expiry{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        } - time()
-      )
-    ||| % $._config,
-
-    local sslCertificateExpiryStatPanel =
-      statPanel.new(
-        'SSL Certificate Expiry',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          sslCertificateExpiryQuery,
-        )
-      ) +
-      stOptions.withColorMode('background') +
-      stOptions.withGraphMode('none') +
-      stStandardOptions.withUnit('dtdurations') +
-      stStandardOptions.thresholds.withSteps([
-        stStandardOptions.threshold.step.withValue(0.0) +
-        stStandardOptions.threshold.step.withColor('red'),
-        stStandardOptions.threshold.step.withValue(($._config.probeSslExpireDaysThreshold) * 24 * 3600) +
-        stStandardOptions.threshold.step.withColor('green'),
-      ]),
-
-    local averageLatencyQuery = |||
-      avg by (instance) (
-        probe_duration_seconds{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
-
-    local averageLatencyStatPanel =
-      statPanel.new(
-        'Average Latency',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          averageLatencyQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('s') +
-      stOptions.reduceOptions.withCalcs(['mean']),
-
-    local averageDnsLookupQuery = |||
-      avg by (instance) (
-        probe_dns_lookup_time_seconds{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
-
-    local averageDnsLookupStatPanel =
-      statPanel.new(
-        'Average Latency',
-      ) +
-      stQueryOptions.withTargets(
-        prometheus.new(
-          '$datasource',
-          averageDnsLookupQuery,
-        )
-      ) +
-      stStandardOptions.withUnit('s') +
-      stOptions.reduceOptions.withCalcs(['mean']),
-
-    local probeHttpDurationQuery = |||
-      sum by (instance) (
-        avg by (phase,instance) (
-          probe_http_duration_seconds{
-            %(clusterLabel)s="$cluster",
-            job=~"$job",
-            instance=~"$instance"
-          }
-        )
-      )
-    ||| % $._config,
-    local probeTotalDurationQuery = |||
-      avg by (instance) (
-        probe_duration_seconds{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      )
-    ||| % $._config,
-
-    local probeDurationTimeSeriesPanel =
-      timeSeriesPanel.new(
-        'Probe Duration',
-      ) +
-      tsQueryOptions.withTargets(
+      local summaryRowPanels =
         [
-          prometheus.new(
-            '$datasource',
-            probeHttpDurationQuery,
-          ) +
-          prometheus.withLegendFormat(
-            'HTTP duration'
-          ),
-          prometheus.new(
-            '$datasource',
-            probeTotalDurationQuery,
-          ) +
-          prometheus.withLegendFormat(
-            'Total probe duration'
-          ),
-        ]
-      ) +
-      tsStandardOptions.withUnit('s') +
-      tsOptions.tooltip.withMode('multi') +
-      tsOptions.tooltip.withSort('desc') +
-      tsLegend.withShowLegend(true) +
-      tsLegend.withDisplayMode('table') +
-      tsLegend.withPlacement('right') +
-      tsLegend.withCalcs(['mean', 'max']) +
-      tsLegend.withSortBy('Mean') +
-      tsLegend.withSortDesc(true) +
-      tsCustom.withFillOpacity(10) +
-      tsCustom.withSpanNulls(false),
+          panels.statusMapStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(1) +
+          statPanel.gridPos.withW(24) +
+          statPanel.gridPos.withH(5),
+        ] +
+        grid.makeGrid(
+          [panels.probesCountStat, panels.probesSuccessPercentStat, panels.probesSslPercentStat, panels.probeAverageDurationStat],
+          panelWidth=6,
+          panelHeight=4,
+          startY=6
+        );
 
-
-    local probeHttpPhaseDurationQuery = |||
-      avg(
-        probe_http_duration_seconds{
-          %(clusterLabel)s="$cluster",
-          job=~"$job",
-          instance=~"$instance"
-        }
-      ) by (phase)
-    ||| % $._config,
-    local probeIcmpPhaseDurationQuery = std.strReplace(probeHttpPhaseDurationQuery, 'probe_http_duration_seconds', 'probe_icmp_duration_seconds'),
-
-    local probePhaseTimeSeriesPanel =
-      timeSeriesPanel.new(
-        'Probe Phases',
-      ) +
-      tsQueryOptions.withTargets(
+      local individualProbes =
         [
-          prometheus.new(
-            '$datasource',
-            probeHttpPhaseDurationQuery,
-          ) +
-          prometheus.withLegendFormat(
-            '{{ phase }}'
-          ),
-          prometheus.new(
-            '$datasource',
-            probeIcmpPhaseDurationQuery,
-          ) +
-          prometheus.withLegendFormat(
-            '{{ phase }}'
-          ),
-        ]
-      ) +
-      tsStandardOptions.withUnit('s') +
-      tsOptions.tooltip.withMode('multi') +
-      tsOptions.tooltip.withSort('desc') +
-      tsLegend.withShowLegend(true) +
-      tsLegend.withDisplayMode('table') +
-      tsLegend.withPlacement('right') +
-      tsLegend.withCalcs(['mean', 'max']) +
-      tsLegend.withSortBy('Mean') +
-      tsLegend.withSortDesc(true) +
-      tsCustom.stacking.withMode('percent') +
-      tsCustom.withFillOpacity(100) +
-      tsCustom.withSpanNulls(false),
+          row.new('$instance') +
+          row.withRepeat('instance') +
+          row.gridPos.withX(0) +
+          row.gridPos.withY(yOffset + 10) +
+          row.gridPos.withW(24) +
+          row.gridPos.withH(1),
+          // Row 1: uptime pair
+          panels.uptimeStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 11) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          panels.uptime30dStat +
+          statPanel.gridPos.withX(3) +
+          statPanel.gridPos.withY(yOffset + 11) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          // Row 2: probe status pair
+          panels.probeSuccessStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 14) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          panels.latestResponseCodeStat +
+          statPanel.gridPos.withX(3) +
+          statPanel.gridPos.withY(yOffset + 14) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          // Row 3: ssl pair
+          panels.sslStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 17) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          panels.sslVersionStat +
+          statPanel.gridPos.withX(3) +
+          statPanel.gridPos.withY(yOffset + 17) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          // Row 4: cert expiry + redirects pair
+          panels.sslCertificateExpiryStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 20) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          panels.redirectsStat +
+          statPanel.gridPos.withX(3) +
+          statPanel.gridPos.withY(yOffset + 20) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          // Row 5: http version + latency pair
+          panels.httpVersionStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 23) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          panels.averageLatencyStat +
+          statPanel.gridPos.withX(3) +
+          statPanel.gridPos.withY(yOffset + 23) +
+          statPanel.gridPos.withW(3) +
+          statPanel.gridPos.withH(3),
+          // Row 6: dns lookup solo
+          panels.averageDnsLookupStat +
+          statPanel.gridPos.withX(0) +
+          statPanel.gridPos.withY(yOffset + 26) +
+          statPanel.gridPos.withW(6) +
+          statPanel.gridPos.withH(3),
+          panels.probeDurationTimeSeries +
+          timeSeriesPanel.gridPos.withX(6) +
+          timeSeriesPanel.gridPos.withY(yOffset + 11) +
+          timeSeriesPanel.gridPos.withW(18) +
+          timeSeriesPanel.gridPos.withH(9),
+          panels.probePhaseTimeSeries +
+          timeSeriesPanel.gridPos.withX(6) +
+          timeSeriesPanel.gridPos.withY(yOffset + 20) +
+          timeSeriesPanel.gridPos.withW(18) +
+          timeSeriesPanel.gridPos.withH(9),
+        ];
 
-    local summaryRow =
-      row.new(
-        title='Summary'
-      ),
-
-    local individualProbesRow =
-      row.new(
-        title='$instance',
-      ) +
-      row.withRepeat('instance'),
-
-    // Set this to 0 for the flat layout, -9 for the collapsed layout
-    local yOffset = if $._config.summaryRowCollapsed then -9 else 0,
-
-    local individualProbes =
-      [
-        individualProbesRow +
-        row.gridPos.withX(0) +
-        row.gridPos.withY(yOffset + 10) +
-        row.gridPos.withW(24) +
-        row.gridPos.withH(1),
-        uptimeStatPanel +
-        statPanel.gridPos.withX(0) +
-        statPanel.gridPos.withY(yOffset + 11) +
-        statPanel.gridPos.withW(6) +
-        statPanel.gridPos.withH(4),
-        uptime30dStatPanel +
-        statPanel.gridPos.withX(0) +
-        statPanel.gridPos.withY(yOffset + 15) +
-        statPanel.gridPos.withW(6) +
-        statPanel.gridPos.withH(4),
-      ] +
-      grid.makeGrid(
-        [probeSuccessStatPanel, latestResponseCodeStatPanel],
-        panelWidth=3,
-        panelHeight=2,
-        startY=yOffset + 15
-      ) +
-      grid.makeGrid(
-        [sslStatPanel, sslVersionStatPanel],
-        panelWidth=3,
-        panelHeight=2,
-        startY=yOffset + 17
-      ) +
-      [
-        sslCertificateExpiryStatPanel +
-        statPanel.gridPos.withX(0) +
-        statPanel.gridPos.withY(yOffset + 19) +
-        statPanel.gridPos.withW(6) +
-        statPanel.gridPos.withH(2),
-      ] +
-      grid.makeGrid(
-        [redirectsStatPanel, httpVersionStatPanel],
-        panelWidth=3,
-        panelHeight=2,
-        startY=yOffset + 22
-      ) +
-      grid.makeGrid(
-        [averageLatencyStatPanel, averageDnsLookupStatPanel],
-        panelWidth=3,
-        panelHeight=4,
-        startY=yOffset + 25
-      ) +
-      [
-        probeDurationTimeSeriesPanel +
-        timeSeriesPanel.gridPos.withX(6) +
-        timeSeriesPanel.gridPos.withY(yOffset + 11) +
-        timeSeriesPanel.gridPos.withW(18) +
-        timeSeriesPanel.gridPos.withH(10),
-        probePhaseTimeSeriesPanel +
-        timeSeriesPanel.gridPos.withX(6) +
-        timeSeriesPanel.gridPos.withY(yOffset + 21) +
-        timeSeriesPanel.gridPos.withW(18) +
-        timeSeriesPanel.gridPos.withH(10),
-      ],
-
-    local summaryRowPanels =
-      [
-        statusMapStatPanel +
-        statPanel.gridPos.withX(0) +
-        statPanel.gridPos.withY(1) +
-        statPanel.gridPos.withW(24) +
-        statPanel.gridPos.withH(5),
-      ] +
-      grid.makeGrid(
-        [probesStatPanel, probesSuccessStatPanel, probesSSLStatPanel, probeDurationStatPanel],
-        panelWidth=6,
-        panelHeight=4,
-        startY=6
-      ),
-
-    'blackbox-exporter.json':
-      $._config.bypassDashboardValidation +
-      dashboard.new(
-        'Blackbox Exporter',
-      ) +
-      dashboard.withDescription('A dashboard that monitors the Blackbox-exporter. It is created using the [blackbox-exporter-mixin](https://github.com/adinhodovic/blackbox-exporter-mixin) for the the (blackbox-exporter)[https://github.com/prometheus/blackbox_exporter].') +
-      dashboard.withUid($._config.dashboardUid) +
-      dashboard.withTags($._config.tags) +
-      dashboard.withTimezone('utc') +
-      dashboard.withEditable(true) +
-      dashboard.time.withFrom('now-2d') +
-      dashboard.time.withTo('now') +
-      dashboard.withVariables(variables) +
-      dashboard.withPanels(
+      local rows =
         [
-          summaryRow +
+          row.new('Summary') +
           row.gridPos.withX(0) +
           row.gridPos.withY(0) +
           row.gridPos.withW(24) +
@@ -813,7 +606,25 @@ local tsLegend = tsOptions.legend;
           (if $._config.summaryRowCollapsed then row.withPanels(summaryRowPanels) else {}),
         ] +
         (if $._config.summaryRowCollapsed then [] else summaryRowPanels) +
-        individualProbes
+        individualProbes;
+
+      mixinUtils.dashboards.bypassDashboardValidation +
+      dashboard.new(
+        'Blackbox Exporter',
+      ) +
+      dashboard.withDescription(
+        'A dashboard that monitors the Blackbox Exporter. It is created using the [blackbox-exporter-mixin](https://github.com/adinhodovic/blackbox-exporter-mixin) for the [blackbox-exporter](https://github.com/prometheus/blackbox_exporter). %s' % mixinUtils.dashboards.dashboardDescriptionLink('blackbox-exporter-mixin', 'https://github.com/adinhodovic/blackbox-exporter-mixin')
+      ) +
+      dashboard.withUid($._config.dashboardIds[dashboardName]) +
+      dashboard.withTags($._config.tags) +
+      dashboard.withTimezone('utc') +
+      dashboard.withEditable(false) +
+      dashboard.time.withFrom('now-2d') +
+      dashboard.time.withTo('now') +
+      dashboard.withVariables(variables) +
+      dashboard.withPanels(rows) +
+      dashboard.withAnnotations(
+        mixinUtils.dashboards.annotations($._config, defaultFilters)
       ),
   },
 }
