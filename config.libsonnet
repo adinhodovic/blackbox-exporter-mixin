@@ -1,11 +1,6 @@
 {
   _config+:: {
     local this = self,
-    // Bypasses grafana.com/dashboards validator
-    bypassDashboardValidation: {
-      __inputs: [],
-      __requires: [],
-    },
 
     // Selectors are inserted between {} in Prometheus queries.
     blackboxExporterSelector: 'job="blackbox-exporter"',
@@ -21,30 +16,68 @@
     clusterLabel: 'cluster',
 
     grafanaUrl: 'https://grafana.com',
-    dashboardUid: 'blackbox-exporter-j4da',
-    dashboardUrl: '%s/d/%s/blackbox-exporter' % [this.grafanaUrl, this.dashboardUid],
 
-    // The period in days to consider for the uptime evaluation
-    uptimePeriodDays: 30,
-    // Will alert if below the percentage for the configured uptime period
-    uptimeThreshold: 99.9,
-    // The period in minutes to consider for the probe to fail
+    dashboardIds: {
+      'blackbox-exporter': 'blackbox-exporter-j4da',
+    },
+    dashboardUrls: {
+      'blackbox-exporter': '%s/d/%s/blackbox-exporter' % [this.grafanaUrl, this.dashboardIds['blackbox-exporter']],
+    },
+
+    tags: ['blackbox-exporter', 'blackbox-exporter-mixin'],
+
+    // Deprecated: use alerts.probeFailed.interval
     probeFailedInterval: '1m',
-    // Severity for the probe failed alert
+    // Deprecated: use alerts.probeFailed.severity
     blackboxProbeFailedSeverity: 'critical',
-    // Severity for the low uptime alert
+
+    // Deprecated: use alerts.probeLowUptime.periodDays
+    uptimePeriodDays: 30,
+    // Deprecated: use alerts.probeLowUptime.threshold
+    uptimeThreshold: 99.9,
+    // Deprecated: use alerts.probeLowUptime.severity
     blackboxProbeLowUptimeSeverity: 'info',
-    // Enable SSL certificate expiration alerting
-    // Might overlap with certmanager alerts
+
+    // Deprecated: use alerts.sslCertExpiry.enabled
     probleSslCertificateExpireEnabled: true,
-    // Cert-manager defaults to 3 week renewal time
+    // Deprecated: use alerts.sslCertExpiry.expireDaysThreshold
     probeSslExpireDaysThreshold: 21,
-    // Severity for the low uptime alert
+    // Deprecated: use alerts.sslCertExpiry.severity
     blackboxProbeSslCertificateExpireSeverity: 'warning',
+
+    alerts: {
+      enabled: true,
+
+      probeFailed: {
+        enabled: true,
+        severity: this.blackboxProbeFailedSeverity,
+        interval: this.probeFailedInterval,
+      },
+
+      probeLowUptime: {
+        enabled: true,
+        severity: this.blackboxProbeLowUptimeSeverity,
+        periodDays: this.uptimePeriodDays,
+        threshold: this.uptimeThreshold,
+      },
+
+      sslCertExpiry: {
+        enabled: this.probleSslCertificateExpireEnabled,
+        severity: this.blackboxProbeSslCertificateExpireSeverity,
+        expireDaysThreshold: this.probeSslExpireDaysThreshold,
+      },
+    },
+
+    annotation: {
+      enabled: false,
+      name: 'Custom Annotation',
+      tags: [],
+      datasource: '-- Grafana --',
+      iconColor: 'blue',
+      type: 'tags',
+    },
 
     // UI config
     summaryRowCollapsed: false,
-
-    tags: ['blackbox-exporter', 'blackbox-exporter-mixin'],
   },
 }
