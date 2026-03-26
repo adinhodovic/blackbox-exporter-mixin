@@ -314,6 +314,7 @@ local timeSeriesPanel = g.panel.timeSeries;
             'Uptime 30d',
             'percentunit',
             queries.uptime30d,
+            instant=true,
             description='Average probe success rate over the last 30 days.',
             steps=[
               statPanel.standardOptions.threshold.step.withValue(0.0) +
