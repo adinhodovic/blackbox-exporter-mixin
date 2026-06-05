@@ -53,3 +53,23 @@ tests:
               summary: "SSL certificate will expire soon."
               description: "The SSL certificate of the instance test is expiring within 21 days.\nActual time left: 9d 23h 55m 0s.\n"
               dashboard_url: "https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?var-instance=test"
+  - interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{job="blackbox-exporter", instance="test"}'
+        # cert expiry is in the past
+        values: "0+0x5"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: BlackboxSslCertificateWillExpireSoon
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: BlackboxSslCertificateExpired
+        exp_alerts:
+          - exp_labels:
+              job: blackbox-exporter
+              instance: test
+              severity: warning
+            exp_annotations:
+              summary: "SSL certificate has expired."
+              description: "The SSL certificate of the instance test has expired.\nActual time left: -5m 0s.\n"
+              dashboard_url: "https://grafana.com/d/blackbox-exporter-j4da/blackbox-exporter?var-instance=test"

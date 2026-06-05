@@ -44,6 +44,8 @@
             alert: 'BlackboxSslCertificateWillExpireSoon',
             expr: |||
               probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < %(expireDaysThreshold)s * 24 * 3600
+              and
+              probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() > 0
             ||| % (
               $._config
               {
@@ -59,6 +61,23 @@
                 The SSL certificate of the instance {{ $labels.instance }} is expiring within %(expireDaysThreshold)s days.
                 Actual time left: {{ $value | humanizeDuration }}.
               ||| % $._config.alerts.sslCertExpiry,
+              dashboard_url: $._config.dashboardUrls['blackbox-exporter'] + '?var-instance={{ $labels.instance }}' + clusterVariableQueryString,
+            },
+          },
+          if $._config.alerts.sslCertExpiry.enabled then {
+            alert: 'BlackboxSslCertificateExpired',
+            expr: |||
+              probe_ssl_earliest_cert_expiry{%(blackboxExporterSelector)s} - time() < 0
+            ||| % $._config,
+            labels: {
+              severity: $._config.alerts.sslCertExpiry.severity,
+            },
+            annotations: {
+              summary: 'SSL certificate has expired.',
+              description: |||
+                The SSL certificate of the instance {{ $labels.instance }} has expired.
+                Actual time left: {{ $value | humanizeDuration }}.
+              |||,
               dashboard_url: $._config.dashboardUrls['blackbox-exporter'] + '?var-instance={{ $labels.instance }}' + clusterVariableQueryString,
             },
           },
